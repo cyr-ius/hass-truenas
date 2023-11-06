@@ -13,9 +13,9 @@
             }
         },
         "error": {
-            "cannot_connect": "No response from host.",
             "invalid_auth": "No authorization for this endpoint.",
-            "unknown": "Internal error."
+            "unknown": "Internal error.",
+            "cannot_connect": "No response from host."
         }
     }
 }

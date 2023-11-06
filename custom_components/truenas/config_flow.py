@@ -25,6 +25,7 @@ from .const import DOMAIN
 
 DATA_SCHEMA = vol.Schema(
     {
+        vol.Required(CONF_NAME, default="Truenas", description="Unique Name"): str,
         vol.Required(CONF_HOST): str,
         vol.Required(CONF_API_KEY): str,
         vol.Required(CONF_SSL): bool,
@@ -35,22 +36,32 @@ DATA_SCHEMA = vol.Schema(
 _LOGGER = logging.getLogger(__name__)
 
 
-class HeatzyFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
-    """Handle a Heatzy config flow."""
+class TruenasFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
+    """Handle a Truenas config flow."""
 
     VERSION = 1
+
+    async def async_step_import(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Occurs when a previous entry setup fails and is re-initiated."""
+        return await self.async_step_user(user_input)
 
     async def async_step_user(self, user_input=None):
         """Handle a flow initialized by the user."""
         errors = {}
         if user_input:
             try:
+                name = user_input["CONF_NAME"]
+                await self.async_set_unique_id(name)
+                self._abort_if_unique_id_configured()
+
                 api = TruenasClient(
-                    config_entry.data[CONF_HOST],
-                    config_entry.data[CONF_API_KEY],
+                    user_input.data[CONF_HOST],
+                    user_input.data[CONF_API_KEY],
                     async_create_clientsession(hass),
-                    config_entry.data[CONF_SSL],
-                    config_entry.data[CONF_VERIFY_SSL],
+                    user_input.data[CONF_SSL],
+                    user_input.data[CONF_VERIFY_SSL],
                 )
                 if await api.async_is_alive():
                     raise TruenasConnectionError("Truenas not response")
@@ -62,7 +73,7 @@ class HeatzyFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 errors["base"] = "unknown"
             else:
                 return self.async_create_entry(
-                    title=f"{DOMAIN} ({username})", data=user_input
+                    title=f"{DOMAIN} ({name})", data=user_input
                 )
 
         return self.async_show_form(
