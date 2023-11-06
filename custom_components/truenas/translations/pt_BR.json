@@ -13,11 +13,9 @@
             }
         },
         "error": {
-            "name_exists": "O nome já existe.",
-            "401": "Nenhuma autorização para este endpoint.",
-            "404": "API não encontrada neste host.",
-            "500": "Erro interno.",
-            "no_response": "Sem resposta do host."
+            "invalid_auth": "Nenhuma autorização para este endpoint.",
+            "unknown": "Erro interno.",
+            "cannot_connect": "Sem resposta do host."
         }
     }
 }

@@ -13,11 +13,9 @@
             }
         },
         "error": {
-            "name_exists": "Name already exists.",
-            "401": "No authorization for this endpoint.",
-            "404": "API not found on this host.",
-            "500": "Internal error.",
-            "no_response": "No response from host."
+            "invalid_auth": "No authorization for this endpoint.",
+            "unknown": "Internal error.",
+            "cannot_connect": "No response from host."
         }
     }
 }

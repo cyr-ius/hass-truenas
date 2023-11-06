@@ -1,0 +1,21 @@
+{
+    "config": {
+        "step": {
+            "user": {
+                "description": "Paramtrage de l'intégration.",
+                "data": {
+                    "name": "Nom unique de l'équipement",
+                    "host": "Host",
+                    "api_key": "clé API",
+                    "ssl": "Utiliser SSL",
+                    "verify_ssl": "Vérifier le certificat SSL"
+                }
+            }
+        },
+        "error": {
+            "cannot_connect": "Imposssible de joindre l'hôte.",
+            "invalid_auth": "Accès refusé.",
+            "unknown": "Erreur interne."
+        }
+    }
+}
