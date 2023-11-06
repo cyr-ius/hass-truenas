@@ -52,18 +52,19 @@ class TruenasFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         errors = {}
         if user_input:
             try:
-                name = user_input["CONF_NAME"]
+                name = user_input[CONF_NAME]
                 await self.async_set_unique_id(name)
                 self._abort_if_unique_id_configured()
 
                 api = TruenasClient(
-                    user_input.data[CONF_HOST],
-                    user_input.data[CONF_API_KEY],
-                    async_create_clientsession(hass),
-                    user_input.data[CONF_SSL],
-                    user_input.data[CONF_VERIFY_SSL],
+                    user_input[CONF_HOST],
+                    user_input[CONF_API_KEY],
+                    async_create_clientsession(self.hass),
+                    user_input[CONF_SSL],
+                    user_input[CONF_VERIFY_SSL],
                 )
-                if await api.async_is_alive():
+                connected = await api.async_is_alive()
+                if connected is False:
                     raise TruenasConnectionError("Truenas not response")
             except TruenasAuthenticationError:
                 errors["base"] = "invalid_auth"
