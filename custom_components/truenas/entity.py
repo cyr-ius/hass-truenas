@@ -8,6 +8,7 @@ from .coordinator import TruenasDataUpdateCoordinator
 from .helpers import format_attribute
 
 _LOGGER = getLogger(__name__)
+from homeassistant.const import CONF_NAME
 from homeassistant.core import callback
 from homeassistant.helpers.entity import DeviceInfo, Entity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -42,28 +43,30 @@ class TruenasEntity(CoordinatorEntity[TruenasDataUpdateCoordinator], Entity):
 
         # Device info
         system_info = coordinator.data.get("systeminfos", {})
+        device_name = coordinator.config_entry.data[CONF_NAME].capitalize()
+        identifier = f"{device_name} {entity_description.category}"
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, entity_description.category)},
+            identifiers={(DOMAIN, identifier)},
             manufacturer=system_info.get("system_manufacturer"),
             model=system_info.get("system_product"),
             via_device=(DOMAIN, system_info["hostname"]),
-            name=entity_description.category,
+            name=identifier,
         )
         if entity_description.category == "System":
             self._attr_device_info = DeviceInfo(
-                identifiers={(DOMAIN, entity_description.category)},
+                identifiers={(DOMAIN, system_info["hostname"])},
                 manufacturer=system_info.get("system_manufacturer"),
                 sw_version=system_info.get("version"),
                 model=system_info.get("system_product"),
                 configuration_url=f"http://{system_info['hostname']}",
-                name=entity_description.category,
+                name=identifier,
             )
 
         # Unique id
         self._attr_unique_id = entity_description.key
         if reference := entity_description.reference:
             ref_str = slugify(str(self.datas.get(reference, "")).lower())
-            self._attr_unique_id = f"{entity_description.key}-{ref_str}"
+            self._attr_unique_id = f"{device_name}-{entity_description.key}-{ref_str}"
 
     @callback
     def _handle_coordinator_update(self) -> None:
