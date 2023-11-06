@@ -1,12 +1,17 @@
-"""Config flow to configure TrueNAS."""
+"""Config flow to configure Truenas."""
 from __future__ import annotations
 
-from logging import getLogger
-from typing import Any
+import logging
 
 import voluptuous as vol
+from truenaspy import (
+    TruenasAuthenticationError,
+    TruenasClient,
+    TruenasConnectionError,
+    TruenasError,
+)
 
-from homeassistant.config_entries import CONN_CLASS_LOCAL_POLL, ConfigFlow
+from homeassistant import config_entries
 from homeassistant.const import (
     CONF_API_KEY,
     CONF_HOST,
@@ -14,109 +19,52 @@ from homeassistant.const import (
     CONF_SSL,
     CONF_VERIFY_SSL,
 )
-from homeassistant.core import callback
-from homeassistant.data_entry_flow import FlowResult
+from homeassistant.helpers.aiohttp_client import async_create_clientsession
 
-from .const import (
-    DEFAULT_DEVICE_NAME,
-    DEFAULT_HOST,
-    DEFAULT_SSL,
-    DEFAULT_SSL_VERIFY,
-    DOMAIN,
-)
-from .truenas_api import TrueNASAPI
+from .const import DOMAIN
 
-_LOGGER = getLogger(__name__)
-
-
-# ---------------------------
-#   configured_instances
-# ---------------------------
-@callback
-def configured_instances(hass):
-    """Return a set of configured instances."""
-    return {
-        entry.data[CONF_NAME] for entry in hass.config_entries.async_entries(DOMAIN)
+DATA_SCHEMA = vol.Schema(
+    {
+        vol.Required(CONF_HOST): str,
+        vol.Required(CONF_API_KEY): str,
+        vol.Required(CONF_SSL): bool,
+        vol.Required(CONF_VERIFY_SSL): bool,
     }
+)
+
+_LOGGER = logging.getLogger(__name__)
 
 
-# ---------------------------
-#   TrueNASConfigFlow
-# ---------------------------
-class TrueNASConfigFlow(ConfigFlow, domain=DOMAIN):
-    """TrueNASConfigFlow class."""
+class HeatzyFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
+    """Handle a Heatzy config flow."""
 
     VERSION = 1
-    CONNECTION_CLASS = CONN_CLASS_LOCAL_POLL
 
-    async def async_step_import(
-        self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
-        """Occurs when a previous entry setup fails and is re-initiated."""
-        return await self.async_step_user(user_input)
-
-    async def async_step_user(
-        self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    async def async_step_user(self, user_input=None):
         """Handle a flow initialized by the user."""
         errors = {}
-        if user_input is not None:
-            # Check if instance with this name already exists
-            if user_input[CONF_NAME] in configured_instances(self.hass):
-                errors["base"] = "name_exists"
-
-            # Test connection
-            api = await self.hass.async_add_executor_job(
-                TrueNASAPI,
-                self.hass,
-                user_input[CONF_HOST],
-                user_input[CONF_API_KEY],
-                user_input[CONF_SSL],
-                user_input[CONF_VERIFY_SSL],
-            )
-
-            conn, errorcode = await self.hass.async_add_executor_job(
-                api.connection_test
-            )
-            if not conn:
-                errors[CONF_HOST] = errorcode
-                _LOGGER.error("TrueNAS connection error (%s)", errorcode)
-
-            # Save instance
-            if not errors:
+        if user_input:
+            try:
+                api = TruenasClient(
+                    config_entry.data[CONF_HOST],
+                    config_entry.data[CONF_API_KEY],
+                    async_create_clientsession(hass),
+                    config_entry.data[CONF_SSL],
+                    config_entry.data[CONF_VERIFY_SSL],
+                )
+                if await api.async_is_alive():
+                    raise TruenasConnectionError("Truenas not response")
+            except TruenasAuthenticationError:
+                errors["base"] = "invalid_auth"
+            except TruenasConnectionError:
+                errors["base"] = "cannot_connect"
+            except TruenasError:
+                errors["base"] = "unknown"
+            else:
                 return self.async_create_entry(
-                    title=user_input[CONF_NAME], data=user_input
+                    title=f"{DOMAIN} ({username})", data=user_input
                 )
 
-            return self._show_config_form(user_input=user_input, errors=errors)
-
-        return self._show_config_form(
-            user_input={
-                CONF_NAME: DEFAULT_DEVICE_NAME,
-                CONF_HOST: DEFAULT_HOST,
-                CONF_API_KEY: "",
-                CONF_SSL: DEFAULT_SSL,
-                CONF_VERIFY_SSL: DEFAULT_SSL_VERIFY,
-            },
-            errors=errors,
-        )
-
-    def _show_config_form(
-        self, user_input: dict[str, Any] | None, errors: dict[str, Any] | None = None
-    ) -> FlowResult:
-        """Show the configuration form."""
         return self.async_show_form(
-            step_id="user",
-            data_schema=vol.Schema(
-                {
-                    vol.Required(CONF_NAME, default=user_input[CONF_NAME]): str,
-                    vol.Required(CONF_HOST, default=user_input[CONF_HOST]): str,
-                    vol.Required(CONF_API_KEY, default=user_input[CONF_API_KEY]): str,
-                    vol.Optional(CONF_SSL, default=user_input[CONF_SSL]): bool,
-                    vol.Optional(
-                        CONF_VERIFY_SSL, default=user_input[CONF_VERIFY_SSL]
-                    ): bool,
-                }
-            ),
-            errors=errors,
+            step_id="user", data_schema=DATA_SCHEMA, errors=errors
         )
