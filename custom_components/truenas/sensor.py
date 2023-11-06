@@ -56,9 +56,8 @@ class TruenasSensorEntityDescription(SensorEntityDescription):
     refer: str | None = None
     attr: str | None = None
     extra_attributes: list[str] = field(default_factory=lambda: [])
-    extra_name: str | None = None
     reference: str | None = None
-    func: str = "Sensor"
+    func: str = lambda *args: Sensor(*args)  # pylint: disable=unnecessary-lambda
 
 
 RESOURCE_LIST: Final[tuple[TruenasSensorEntityDescription, ...]] = (
@@ -71,7 +70,7 @@ RESOURCE_LIST: Final[tuple[TruenasSensorEntityDescription, ...]] = (
         category="System",
         refer="systeminfos",
         attr="uptimeEpoch",
-        func="UptimeSensor",
+        func=lambda *args: UptimeSensor(*args),  # pylint: disable=unnecessary-lambda
     ),
     TruenasSensorEntityDescription(
         key="system_cpu_temperature",
@@ -226,9 +225,8 @@ RESOURCE_LIST: Final[tuple[TruenasSensorEntityDescription, ...]] = (
         refer="datasets",
         attr="used_gb",
         extra_attributes=EXTRA_ATTRS_DATASET,
-        extra_name="id",
         reference="id",
-        func="DatasetSensor",
+        func=lambda *args: DatasetSensor(*args),  # pylint: disable=unnecessary-lambda
     ),
     TruenasSensorEntityDescription(
         key="disk",
@@ -240,7 +238,6 @@ RESOURCE_LIST: Final[tuple[TruenasSensorEntityDescription, ...]] = (
         refer="disks",
         attr="temperature",
         extra_attributes=EXTRA_ATTRS_DISK,
-        extra_name="devname",
         reference="devname",
     ),
     TruenasSensorEntityDescription(
@@ -251,7 +248,7 @@ RESOURCE_LIST: Final[tuple[TruenasSensorEntityDescription, ...]] = (
         attr="state",
         extra_attributes=EXTRA_ATTRS_CLOUDSYNC,
         reference="id",
-        func="ClousyncSensor",
+        func=lambda *args: ClousyncSensor(*args),  # pylint: disable=unnecessary-lambda
     ),
     TruenasSensorEntityDescription(
         key="replication",
@@ -288,25 +285,19 @@ async def async_setup_entry(
 
     platform = entity_platform.async_get_current_platform()
     for service in SERVICES:
-        platform.async_register_entity_service(service[0], service[1], service[2])
+        platform.async_register_entity_service(*service)
 
     entities = []
-    dispatcher = {
-        "Sensor": Sensor,
-        "UptimeSensor": UptimeSensor,
-        "DatasetSensor": DatasetSensor,
-        "ClousyncSensor": ClousyncSensor,
-    }
     for description in RESOURCE_LIST:
         if description.reference:
             for key, value in coordinator.data.get(description.refer, {}).items():
                 entities.append(
-                    dispatcher[description.func](
+                    description.func(
                         coordinator, description, value[description.reference]
                     )
                 )
         else:
-            entities.append(dispatcher[description.func](coordinator, description))
+            entities.append(description.func(coordinator, description))
 
     async_add_entities(entities, update_before_add=True)
 

@@ -58,9 +58,8 @@ class TruenasBinarySensorEntityDescription(BinarySensorEntityDescription):
     refer: str | None = None
     attr: str | None = None
     extra_attributes: list[str] = field(default_factory=lambda: [])
-    extra_name: str | None = None
     reference: str | None = None
-    func: str = "BinarySensor"
+    func: str = lambda *args: BinarySensor(*args)  # pylint: disable=unnecessary-lambda
 
 
 RESOURCE_LIST: Final[tuple[TruenasBinarySensorEntityDescription, ...]] = (
@@ -71,7 +70,6 @@ RESOURCE_LIST: Final[tuple[TruenasBinarySensorEntityDescription, ...]] = (
         category="System",
         refer="pools",
         attr="healthy",
-        extra_name="name",
         reference="guid",
         extra_attributes=EXTRA_ATTRS_POOL,
     ),
@@ -82,10 +80,11 @@ RESOURCE_LIST: Final[tuple[TruenasBinarySensorEntityDescription, ...]] = (
         category="Jails",
         refer="jails",
         attr="state",
-        extra_name="host_hostname",
         reference="id",
         extra_attributes=EXTRA_ATTRS_JAIL,
-        func="JailBinarySensor",
+        func=lambda *args: JailBinarySensor(
+            *args
+        ),  # pylint: disable=unnecessary-lambda
     ),
     TruenasBinarySensorEntityDescription(
         key="vm",
@@ -94,10 +93,9 @@ RESOURCE_LIST: Final[tuple[TruenasBinarySensorEntityDescription, ...]] = (
         category="VMs",
         refer="virtualmachines",
         attr="running",
-        extra_name="name",
         reference="name",
         extra_attributes=EXTRA_ATTRS_VM,
-        func="VMBinarySensor",
+        func=lambda *args: VMBinarySensor(*args),  # pylint: disable=unnecessary-lambda
     ),
     TruenasBinarySensorEntityDescription(
         key="service",
@@ -106,10 +104,11 @@ RESOURCE_LIST: Final[tuple[TruenasBinarySensorEntityDescription, ...]] = (
         category="Services",
         refer="services",
         attr="running",
-        extra_name="service",
         reference="service",
         extra_attributes=EXTRA_ATTRS_SERVICE,
-        func="ServiceBinarySensor",
+        func=lambda *args: ServiceBinarySensor(
+            *args
+        ),  # pylint: disable=unnecessary-lambda
     ),
     TruenasBinarySensorEntityDescription(
         key="app",
@@ -118,10 +117,11 @@ RESOURCE_LIST: Final[tuple[TruenasBinarySensorEntityDescription, ...]] = (
         category="Charts",
         refer="charts",
         attr="running",
-        extra_name="name",
         reference="id",
         extra_attributes=EXTRA_ATTRS_CHART,
-        func="ChartBinarySensor",
+        func=lambda *args: ChartBinarySensor(
+            *args
+        ),  # pylint: disable=unnecessary-lambda
     ),
 )
 
@@ -147,26 +147,19 @@ async def async_setup_entry(
 
     platform = entity_platform.async_get_current_platform()
     for service in SERVICES:
-        platform.async_register_entity_service(service[0], service[1], service[2])
+        platform.async_register_entity_service(*service)
 
     entities = []
-    dispatcher = {
-        "BinarySensor": BinarySensor,
-        "JailBinarySensor": JailBinarySensor,
-        "VMBinarySensor": VMBinarySensor,
-        "ServiceBinarySensor": ServiceBinarySensor,
-        "ChartBinarySensor": ChartBinarySensor,
-    }
     for description in RESOURCE_LIST:
         if description.reference:
             for key, value in coordinator.data.get(description.refer, {}).items():
                 entities.append(
-                    dispatcher[description.func](
+                    description.func(
                         coordinator, description, value[description.reference]
                     )
                 )
         else:
-            entities.append(dispatcher[description.func](coordinator, description))
+            entities.append(description.func(coordinator, description))
 
     async_add_entities(entities, update_before_add=True)
 
