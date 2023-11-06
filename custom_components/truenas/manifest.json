@@ -9,5 +9,5 @@
     "issue_tracker": "https://github.com/cyr-ius/hass-truenas/issues",
     "loggers": ["truenaspy"],
     "requirements": ["truenaspy==0.4.6"],
-    "version": "0.5.8"
+    "version": "0.5.9"
 }
