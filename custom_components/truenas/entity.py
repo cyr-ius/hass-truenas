@@ -34,20 +34,18 @@ class TruenasEntity(CoordinatorEntity[TruenasDataUpdateCoordinator], Entity):
 
         self._attr_name = None
         if isinstance(entity_description.name, str):
-            self._attr_name = entity_description.name
-            if uid:
-                self._attr_name = f"{uid} {self.name}"
-        elif isinstance(entity_description.extra_name, str):
-            self._attr_name = self.datas.get(entity_description.extra_name)
+            self._attr_name = entity_description.name.capitalize()
+        if uid and self.name:
+            self._attr_name = f"{uid} {self.name}".capitalize()
+        if uid and self.name is None:
+            self._attr_name = uid.capitalize()
 
         # Device info
         system_info = coordinator.data.get("systeminfos", {})
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entity_description.category)},
             manufacturer=system_info.get("system_manufacturer"),
-            sw_version=system_info.get("version"),
             model=system_info.get("system_product"),
-            configuration_url=f"http://{system_info['hostname']}",
             via_device=(DOMAIN, system_info["hostname"]),
             name=entity_description.category,
         )
