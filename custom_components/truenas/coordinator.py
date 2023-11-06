@@ -25,7 +25,7 @@ from .const import DOMAIN
 from .helpers import ExtendedDict
 
 _LOGGER = logging.getLogger(__name__)
-SCAN_INTERVAL = 60
+SCAN_INTERVAL = 300
 
 
 class TruenasDataUpdateCoordinator(DataUpdateCoordinator):
