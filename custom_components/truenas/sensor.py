@@ -330,11 +330,11 @@ class UptimeSensor(Sensor):
 
     async def restart(self) -> None:
         """Restart TrueNAS systen."""
-        await self.coordinator.api.query("system/reboot", "post")
+        await self.coordinator.api.query("system/reboot", method="post")
 
     async def stop(self) -> None:
         """Shutdown TrueNAS systen."""
-        await self.coordinator.api.query("system/shutdown", "post")
+        await self.coordinator.api.query("system/shutdown", method="post")
 
 
 class DatasetSensor(Sensor):
@@ -344,7 +344,7 @@ class DatasetSensor(Sensor):
         """Create dataset snapshot."""
         await self.coordinator.api.query(
             "zfs/snapshot",
-            "post",
+            method="post",
             json={"dataset": f"{self.ref['name']}", "name": f"custom-{ts}"},
         )
 
