@@ -4,6 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from logging import getLogger
 
+from homeassistant.components import persistent_notification
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
     BinarySensorEntity,
@@ -15,7 +16,9 @@ from homeassistant.helpers import entity_platform
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
+    CONF_NOTIFY,
     DOMAIN,
+    EXTRA_ATTRS_ALERT,
     EXTRA_ATTRS_CHART,
     EXTRA_ATTRS_JAIL,
     EXTRA_ATTRS_POOL,
@@ -67,7 +70,7 @@ RESOURCE_LIST: Final[tuple[TruenasBinarySensorEntityDescription, ...]] = (
         key="pool_healthy",
         icon_enabled="mdi:database",
         icon_disabled="mdi:database-off",
-        category="System",
+        category="Pool",
         refer="pools",
         attr="healthy",
         reference="guid",
@@ -82,9 +85,9 @@ RESOURCE_LIST: Final[tuple[TruenasBinarySensorEntityDescription, ...]] = (
         attr="state",
         reference="id",
         extra_attributes=EXTRA_ATTRS_JAIL,
-        func=lambda *args: JailBinarySensor(
+        func=lambda *args: JailBinarySensor(  # pylint: disable=unnecessary-lambda
             *args
-        ),  # pylint: disable=unnecessary-lambda
+        ),
     ),
     TruenasBinarySensorEntityDescription(
         key="vm",
@@ -106,9 +109,9 @@ RESOURCE_LIST: Final[tuple[TruenasBinarySensorEntityDescription, ...]] = (
         attr="running",
         reference="service",
         extra_attributes=EXTRA_ATTRS_SERVICE,
-        func=lambda *args: ServiceBinarySensor(
+        func=lambda *args: ServiceBinarySensor(  # pylint: disable=unnecessary-lambda
             *args
-        ),  # pylint: disable=unnecessary-lambda
+        ),
     ),
     TruenasBinarySensorEntityDescription(
         key="app",
@@ -119,9 +122,33 @@ RESOURCE_LIST: Final[tuple[TruenasBinarySensorEntityDescription, ...]] = (
         attr="running",
         reference="id",
         extra_attributes=EXTRA_ATTRS_CHART,
-        func=lambda *args: ChartBinarySensor(
+        func=lambda *args: ChartBinarySensor(  # pylint: disable=unnecessary-lambda
             *args
-        ),  # pylint: disable=unnecessary-lambda
+        ),
+    ),
+    TruenasBinarySensorEntityDescription(
+        key="alert",
+        icon_enabled="mdi:bell",
+        icon_disabled="mdi:bell-off",
+        category="System",
+        refer="alerts",
+        attr="level",
+        extra_attributes=EXTRA_ATTRS_ALERT,
+        func=lambda *args: AlertBinarySensor(  # pylint: disable=unnecessary-lambda
+            *args
+        ),
+    ),
+    TruenasBinarySensorEntityDescription(
+        key="smart",
+        icon_enabled="mdi:bell",
+        icon_disabled="mdi:bell-off",
+        name="Smart status",
+        category="Disk",
+        refer="smarts",
+        attr="smartdisk",
+        reference="name",
+        extra_attributes=EXTRA_ATTRS_ALERT,
+        func=lambda *args: BinarySensor(*args),  # pylint: disable=unnecessary-lambda
     ),
 )
 
@@ -152,7 +179,7 @@ async def async_setup_entry(
     entities = []
     for description in RESOURCE_LIST:
         if description.reference:
-            for key, value in coordinator.data.get(description.refer, {}).items():
+            for value in coordinator.data.get(description.refer, {}):
                 entities.append(
                     description.func(
                         coordinator, description, value[description.reference]
@@ -176,7 +203,7 @@ class BinarySensor(TruenasEntity, BinarySensorEntity):
     def icon(self) -> str:
         """Return the icon."""
         if self.entity_description.icon_enabled:
-            if self.datas.get(self.entity_description.attr):
+            if self.is_on:
                 return self.entity_description.icon_enabled
             else:
                 return self.entity_description.icon_disabled
@@ -433,3 +460,39 @@ class ChartBinarySensor(BinarySensor):
                 "scale_options": {"replica_count": 0},
             },
         )
+
+
+class AlertBinarySensor(BinarySensor):
+    """Define a Truenas Applications Binary Sensor."""
+
+    @property
+    def name(self):
+        return f"Alert"
+
+    @property
+    def is_on(self) -> bool:
+        """Return true if device is on."""
+        status = False
+        for alert in self.datas:
+            if alert.get(self.entity_description.attr) != "INFO":
+                if self.coordinator.config_entry.options.get(CONF_NOTIFY):
+                    persistent_notification.create(
+                        self.hass,
+                        alert["formatted"],
+                        title=f"{alert['level']} {alert['klass']}",
+                        notification_id=alert["uuid"],
+                    )
+                status = True
+
+        return status
+
+    @property
+    def extra_state_attributes(self) -> Mapping[str, Any]:
+        """Return extra attributes."""
+        return {
+            "msg": {
+                alert["uuid"]: alert["formatted"]
+                for alert in self.datas
+                if alert["level"] != "INFO"
+            }
+        }

@@ -30,8 +30,10 @@ class TruenasEntity(CoordinatorEntity[TruenasDataUpdateCoordinator], Entity):
         self.entity_description = entity_description
         self.uid = uid
         self.datas = coordinator.data.get(entity_description.refer, {})
-        if uid:
-            self.datas = self.datas.get(uid, {})
+        if uid is not None:
+            for data in self.datas:
+                if data[entity_description.reference] == uid:
+                    self.datas = data
 
         self._attr_name = None
         if isinstance(entity_description.name, str):
@@ -71,11 +73,12 @@ class TruenasEntity(CoordinatorEntity[TruenasDataUpdateCoordinator], Entity):
     @callback
     def _handle_coordinator_update(self) -> None:
         refer = self.entity_description.refer
-        self.datas = (
-            self.coordinator.data.getr(refer, {}).get(self.uid)
-            if self.uid
-            else self.coordinator.data.getr(refer)
-        )
+        reference = self.entity_description.reference
+        self.datas = self.coordinator.data.get(refer, {})
+        if self.uid is not None:
+            for data in self.datas:
+                if data[reference] == self.uid:
+                    self.datas = data
         self.async_write_ha_state()
         super()._handle_coordinator_update()
 

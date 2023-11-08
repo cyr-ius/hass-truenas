@@ -186,7 +186,7 @@ RESOURCE_LIST: Final[tuple[TruenasSensorEntityDescription, ...]] = (
         icon="mdi:database-settings",
         native_unit_of_measurement=UnitOfInformation.GIBIBYTES,
         state_class=SensorStateClass.MEASUREMENT,
-        category="System",
+        category="Pool",
         refer="pools",
         attr="available_gib",
         extra_attributes=EXTRA_ATTRS_POOL,
@@ -290,7 +290,7 @@ async def async_setup_entry(
     entities = []
     for description in RESOURCE_LIST:
         if description.reference:
-            for key, value in coordinator.data.get(description.refer, {}).items():
+            for value in coordinator.data.get(description.refer, {}):
                 entities.append(
                     description.func(
                         coordinator, description, value[description.reference]

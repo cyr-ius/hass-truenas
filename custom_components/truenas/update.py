@@ -57,7 +57,7 @@ async def async_setup_entry(
     dispatcher = {"UpdateSensor": UpdateSensor}
     for description in RESOURCE_LIST:
         if description.reference:
-            for key, value in coordinator.data.get(description.refer, {}).items():
+            for value in coordinator.data.get(description.refer, {}):
                 entities.append(
                     dispatcher[description.func](
                         coordinator, description, value[description.reference]
