@@ -142,10 +142,10 @@ RESOURCE_LIST: Final[tuple[TruenasBinarySensorEntityDescription, ...]] = (
         key="smart",
         icon_enabled="mdi:bell",
         icon_disabled="mdi:bell-off",
-        name="Smart status",
+        name="Smartdisk alert",
         category="Disk",
         refer="smarts",
-        attr="smartdisk",
+        attr="status",
         reference="name",
         extra_attributes=EXTRA_ATTRS_ALERT,
         func=lambda *args: BinarySensor(*args),  # pylint: disable=unnecessary-lambda
