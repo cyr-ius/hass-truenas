@@ -1,6 +1,7 @@
 """Constants for this component."""
 from homeassistant.const import Platform
 
+CONF_NOTIFY = "notify"
 DOMAIN = "truenas"
 PLATFORMS = [
     Platform.SENSOR,
@@ -195,3 +196,4 @@ EXTRA_ATTRS_CHART = [
     "update_available",
     "version",
 ]
+EXTRA_ATTRS_ALERT = []
