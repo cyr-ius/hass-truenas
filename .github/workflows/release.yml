@@ -6,15 +6,18 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
-      # To use this repository's private action, you must check out the repository
       - name: Checkout
         uses: actions/checkout@v3
+
       - name: Generate changelog
         id: changelog
         uses: metcalfc/changelog-generator@v4.1.0
         with:
           myToken: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Create Release
         id: create_release
         uses: actions/create-release@latest
