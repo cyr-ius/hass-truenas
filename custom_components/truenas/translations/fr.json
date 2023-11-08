@@ -17,5 +17,15 @@
             "invalid_auth": "Accès refusé.",
             "unknown": "Erreur interne."
         }
-    }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "title":"Options",
+                "data": {
+                    "notify": "Activer les notifications"
+                }
+            }
+        }
+    }    
 }

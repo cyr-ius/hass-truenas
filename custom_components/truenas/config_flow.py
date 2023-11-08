@@ -17,11 +17,12 @@ from homeassistant.const import (
     CONF_HOST,
     CONF_NAME,
     CONF_SSL,
-    CONF_VERIFY_SSL,
+    CONF_VERIFY_SSL
 )
+from homeassistant.core import callback
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 
-from .const import DOMAIN
+from .const import DOMAIN, CONF_NOTIFY
 
 DATA_SCHEMA = vol.Schema(
     {
@@ -40,6 +41,12 @@ class TruenasFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a Truenas config flow."""
 
     VERSION = 1
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry):
+        """Get option flow."""
+        return TruenasOptionsFlowHandler(config_entry)
 
     async def async_step_import(
         self, user_input: dict[str, Any] | None = None
@@ -80,3 +87,22 @@ class TruenasFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="user", data_schema=DATA_SCHEMA, errors=errors
         )
+
+
+class TruenasOptionsFlowHandler(config_entries.OptionsFlow):
+    """Handle option."""
+
+    def __init__(self, config_entry) -> None:
+        """Initialize the options flow."""
+        self.config_entry = config_entry
+        self._notify = self.config_entry.options.get(CONF_NOTIFY, False)
+
+    async def async_step_init(self, user_input=None):
+        """Handle a flow initialized by the user."""
+        options_schema = vol.Schema(
+            {vol.Required(CONF_NOTIFY, default=False): bool},
+        )
+        if user_input is not None:
+            return self.async_create_entry(title="", data=user_input)
+
+        return self.async_show_form(step_id="init", data_schema=options_schema)

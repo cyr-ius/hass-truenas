@@ -17,5 +17,15 @@
             "invalid_auth": "No authorization for this endpoint.",
             "unknown": "Internal error."
         }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "title":"Options",
+                "data": {
+                    "notify": "Enable notify"
+                }
+            }
+        }
     }
 }

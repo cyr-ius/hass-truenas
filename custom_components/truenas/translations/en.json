@@ -17,5 +17,15 @@
             "unknown": "Internal error.",
             "cannot_connect": "No response from host."
         }
-    }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "title":"Options",
+                "data": {
+                    "notify": "Enable notify"
+                }
+            }
+        }
+    }    
 }
