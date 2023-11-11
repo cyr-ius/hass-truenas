@@ -68,7 +68,7 @@ RESOURCE_LIST: Final[tuple[TruenasSensorEntityDescription, ...]] = (
         device_class=SensorDeviceClass.TIMESTAMP,
         entity_category=EntityCategory.DIAGNOSTIC,
         category="System",
-        refer="systeminfos",
+        refer="system",
         attr="uptimeEpoch",
         func=lambda *args: UptimeSensor(*args),  # pylint: disable=unnecessary-lambda
     ),
@@ -81,7 +81,7 @@ RESOURCE_LIST: Final[tuple[TruenasSensorEntityDescription, ...]] = (
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
         category="System",
-        refer="systeminfos",
+        refer="system",
         attr="cpu_temperature",
     ),
     TruenasSensorEntityDescription(
@@ -91,7 +91,7 @@ RESOURCE_LIST: Final[tuple[TruenasSensorEntityDescription, ...]] = (
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
         category="System",
-        refer="systeminfos",
+        refer="system",
         attr="load_shortterm",
     ),
     TruenasSensorEntityDescription(
@@ -101,7 +101,7 @@ RESOURCE_LIST: Final[tuple[TruenasSensorEntityDescription, ...]] = (
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
         category="System",
-        refer="systeminfos",
+        refer="system",
         attr="load_midterm",
     ),
     TruenasSensorEntityDescription(
@@ -111,7 +111,7 @@ RESOURCE_LIST: Final[tuple[TruenasSensorEntityDescription, ...]] = (
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
         category="System",
-        refer="systeminfos",
+        refer="system",
         attr="load_longterm",
     ),
     TruenasSensorEntityDescription(
@@ -122,7 +122,7 @@ RESOURCE_LIST: Final[tuple[TruenasSensorEntityDescription, ...]] = (
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
         category="System",
-        refer="systeminfos",
+        refer="system",
         attr="cpu_usage",
         extra_attributes=EXTRA_ATTRS_CPU,
     ),
@@ -134,7 +134,7 @@ RESOURCE_LIST: Final[tuple[TruenasSensorEntityDescription, ...]] = (
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
         category="System",
-        refer="systeminfos",
+        refer="system",
         attr="memory-usage_percent",
         extra_attributes=EXTRA_ATTRS_MEMORY,
     ),
@@ -146,7 +146,7 @@ RESOURCE_LIST: Final[tuple[TruenasSensorEntityDescription, ...]] = (
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
         category="System",
-        refer="systeminfos",
+        refer="system",
         attr="cache_size-arc_value",
     ),
     TruenasSensorEntityDescription(
@@ -157,7 +157,7 @@ RESOURCE_LIST: Final[tuple[TruenasSensorEntityDescription, ...]] = (
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
         category="System",
-        refer="systeminfos",
+        refer="system",
         attr="cache_size-L2_value",
     ),
     TruenasSensorEntityDescription(
@@ -167,7 +167,7 @@ RESOURCE_LIST: Final[tuple[TruenasSensorEntityDescription, ...]] = (
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
         category="System",
-        refer="systeminfos",
+        refer="system",
         attr="cache_ratio-arc_value",
     ),
     TruenasSensorEntityDescription(
@@ -177,7 +177,7 @@ RESOURCE_LIST: Final[tuple[TruenasSensorEntityDescription, ...]] = (
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
         category="System",
-        refer="systeminfos",
+        refer="system",
         attr="cache_ratio-L2_value",
     ),
     TruenasSensorEntityDescription(
@@ -190,7 +190,7 @@ RESOURCE_LIST: Final[tuple[TruenasSensorEntityDescription, ...]] = (
         refer="pools",
         attr="available_gib",
         extra_attributes=EXTRA_ATTRS_POOL,
-        reference="guid",
+        reference="name",
     ),
     TruenasSensorEntityDescription(
         key="traffic_rx",

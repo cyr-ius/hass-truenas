@@ -89,8 +89,10 @@ EXTRA_ATTRS_DATASET = [
     "compressratio",
     "copies",
     "deduplication",
+    "encrypted",
     "encryption_algorithm",
     "exec",
+    "locked",
     "mountpoint",
     "pool",
     "quota",
@@ -197,3 +199,4 @@ EXTRA_ATTRS_CHART = [
     "version",
 ]
 EXTRA_ATTRS_ALERT = []
+EXTRA_ATTRS_SMARTDISK = ["serial", "model", "zfs_guid"]

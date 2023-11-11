@@ -47,8 +47,26 @@ class TruenasDataUpdateCoordinator(DataUpdateCoordinator):
     async def _async_update_data(self) -> dict:
         """Update data."""
         try:
-            datas = await self.api.async_update_all()
-            return ExtendedDict(datas)
+            datas = ExtendedDict(
+                {
+                    "system": await self.api.async_get_system(),
+                    "alerts": await self.api.async_get_alerts(),
+                    "charts": await self.api.async_get_charts(),
+                    "cloudsync": await self.api.async_get_cloudsync(),
+                    "datasets": await self.api.async_get_datasets(),
+                    "disks": await self.api.async_get_disks(),
+                    "interfaces": await self.api.async_get_interfaces(),
+                    "jails": await self.api.async_get_jails(),
+                    "pools": await self.api.async_get_pools(),
+                    "replications": await self.api.async_get_replications(),
+                    "rsynctasks": await self.api.async_get_rsynctasks(),
+                    "services": await self.api.async_get_services(),
+                    "smartdisks": await self.api.async_get_smartdisks(),
+                    "snapshottasks": await self.api.async_get_snapshottasks(),
+                    "virtualmachines": await self.api.async_get_virtualmachines(),
+                }
+            )
+            return datas
         except TruenasAuthenticationError as error:
             raise ConfigEntryAuthFailed from error
         except TruenasError as error:

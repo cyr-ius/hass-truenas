@@ -23,6 +23,7 @@ from .const import (
     EXTRA_ATTRS_JAIL,
     EXTRA_ATTRS_POOL,
     EXTRA_ATTRS_SERVICE,
+    EXTRA_ATTRS_SMARTDISK,
     EXTRA_ATTRS_VM,
     SCHEMA_SERVICE_APP_START,
     SCHEMA_SERVICE_APP_STOP,
@@ -73,7 +74,7 @@ RESOURCE_LIST: Final[tuple[TruenasBinarySensorEntityDescription, ...]] = (
         category="Pool",
         refer="pools",
         attr="healthy",
-        reference="guid",
+        reference="name",
         extra_attributes=EXTRA_ATTRS_POOL,
     ),
     TruenasBinarySensorEntityDescription(
@@ -144,10 +145,10 @@ RESOURCE_LIST: Final[tuple[TruenasBinarySensorEntityDescription, ...]] = (
         icon_disabled="mdi:bell-off",
         name="Smartdisk alert",
         category="Disk",
-        refer="smarts",
+        refer="smartdisks",
         attr="status",
         reference="name",
-        extra_attributes=EXTRA_ATTRS_ALERT,
+        extra_attributes=EXTRA_ATTRS_SMARTDISK,
         func=lambda *args: BinarySensor(*args),  # pylint: disable=unnecessary-lambda
     ),
 )

@@ -42,7 +42,7 @@ RESOURCE_LIST: Final[tuple[TruenasUpdateEntityDescription, ...]] = (
         key="system_update",
         name="Update",
         category="System",
-        refer="systeminfos",
+        refer="system",
         attr="update_available",
         title="Truenas",
     ),

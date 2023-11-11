@@ -44,7 +44,7 @@ class TruenasEntity(CoordinatorEntity[TruenasDataUpdateCoordinator], Entity):
             self._attr_name = uid.capitalize()
 
         # Device info
-        system_info = coordinator.data.get("systeminfos", {})
+        system_info = coordinator.data.get("system", {})
         device_name = coordinator.config_entry.data[CONF_NAME].capitalize()
         identifier = f"{device_name} {entity_description.category}"
         self._attr_device_info = DeviceInfo(
