@@ -27,6 +27,7 @@ from .const import (
     EXTRA_ATTRS_VM,
     SCHEMA_SERVICE_APP_START,
     SCHEMA_SERVICE_APP_STOP,
+    SCHEMA_SERVICE_APP_UPDATE,
     SCHEMA_SERVICE_JAIL_RESTART,
     SCHEMA_SERVICE_JAIL_START,
     SCHEMA_SERVICE_JAIL_STOP,
@@ -38,6 +39,7 @@ from .const import (
     SCHEMA_SERVICE_VM_STOP,
     SERVICE_APP_START,
     SERVICE_APP_STOP,
+    SERVICE_APP_UPDATE,
     SERVICE_JAIL_RESTART,
     SERVICE_JAIL_START,
     SERVICE_JAIL_STOP,
@@ -145,7 +147,7 @@ RESOURCE_LIST: Final[tuple[TruenasBinarySensorEntityDescription, ...]] = (
         icon_disabled="mdi:bell-off",
         name="Smartdisk alert",
         category="Disk",
-        refer="smartdisks",
+        refer="smarts",
         attr="status",
         reference="name",
         extra_attributes=EXTRA_ATTRS_SMARTDISK,
@@ -165,6 +167,7 @@ SERVICES = [
     [SERVICE_SERVICE_RELOAD, SCHEMA_SERVICE_SERVICE_RELOAD, "reload"],
     [SERVICE_APP_START, SCHEMA_SERVICE_APP_START, "start"],
     [SERVICE_APP_STOP, SCHEMA_SERVICE_APP_STOP, "stop"],
+    [SERVICE_APP_UPDATE, SCHEMA_SERVICE_APP_UPDATE, "upgrade"],
 ]
 
 
@@ -180,7 +183,7 @@ async def async_setup_entry(
     entities = []
     for description in RESOURCE_LIST:
         if description.reference:
-            for value in coordinator.data.get(description.refer, {}):
+            for value in getattr(coordinator.data, description.refer, {}):
                 entities.append(
                     description.func(
                         coordinator, description, value[description.reference]
@@ -320,7 +323,7 @@ class ServiceBinarySensor(BinarySensor):
 
     async def start(self):
         """Start a Service."""
-        tmp_service = self.coordinator.api.query(f"service/id/{self.datas['id']}")
+        tmp_service = await self.coordinator.api.query(f"service/id/{self.datas['id']}")
 
         if "state" not in tmp_service:
             _LOGGER.error(
@@ -343,7 +346,7 @@ class ServiceBinarySensor(BinarySensor):
 
     async def stop(self):
         """Stop a Service."""
-        tmp_service = self.coordinator.api.query(f"service/id/{self.datas['id']}")
+        tmp_service = await self.coordinator.api.query(f"service/id/{self.datas['id']}")
 
         if "state" not in tmp_service:
             _LOGGER.error(
@@ -366,7 +369,7 @@ class ServiceBinarySensor(BinarySensor):
 
     async def restart(self):
         """Restart a Service."""
-        tmp_service = self.coordinator.api.query(f"service/id/{self.datas['id']}")
+        tmp_service = await self.coordinator.api.query(f"service/id/{self.datas['id']}")
 
         if "state" not in tmp_service:
             _LOGGER.error(
@@ -415,7 +418,7 @@ class ChartBinarySensor(BinarySensor):
     """Define a Truenas Applications Binary Sensor."""
 
     async def start(self):
-        """Start a VM."""
+        """Start a chart."""
         tmp_vm = await self.coordinator.api.query(
             f"/chart/release/id/{self.datas['id']}"
         )
@@ -440,8 +443,10 @@ class ChartBinarySensor(BinarySensor):
         )
 
     async def stop(self):
-        """Stop a VM."""
-        tmp_vm = self.coordinator.api.query(f"/chart/release/id/{self.datas['id']}")
+        """Stop a chart."""
+        tmp_vm = await self.coordinator.api.query(
+            f"/chart/release/id/{self.datas['id']}"
+        )
 
         if "status" not in tmp_vm:
             _LOGGER.error("VM %s (%s) invalid", self.datas["name"], self.datas["id"])
@@ -461,6 +466,37 @@ class ChartBinarySensor(BinarySensor):
                 "scale_options": {"replica_count": 0},
             },
         )
+
+    async def upgrade(self):
+        """Update a chart."""
+        tmp_vm = await self.coordinator.api.query(
+            f"/chart/release/id/{self.datas['id']}"
+        )
+
+        if "status" not in tmp_vm:
+            _LOGGER.error("VM %s (%s) invalid", self.datas["name"], self.datas["id"])
+            return
+
+        if tmp_vm["status"] != "ACTIVE":
+            _LOGGER.warning(
+                "VM %s (%s) is not up", self.datas["name"], self.datas["id"]
+            )
+            return
+
+        if tmp_vm.get("container_images_update_available") is True:
+            repo = tmp_vm.get("config", {}).get("image", {}).get("repository")
+            tag = tmp_vm.get("config", {}).get("image", {}).get("tag")
+            images = await self.coordinator.api.query(
+                "container/image/pull",
+                method="post",
+                json={"from_image": repo, "tag": tag},
+            )
+        else:
+            await self.coordinator.api.query(
+                "/chart/release/upgrade",
+                method="post",
+                json={"release_name": self.datas["id"]},
+            )
 
 
 class AlertBinarySensor(BinarySensor):

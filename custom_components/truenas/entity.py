@@ -29,7 +29,7 @@ class TruenasEntity(CoordinatorEntity[TruenasDataUpdateCoordinator], Entity):
         super().__init__(coordinator)
         self.entity_description = entity_description
         self.uid = uid
-        self.datas = coordinator.data.get(entity_description.refer, {})
+        self.datas = getattr(coordinator.data, entity_description.refer, {})
         if uid is not None:
             for data in self.datas:
                 if data[entity_description.reference] == uid:
@@ -44,7 +44,7 @@ class TruenasEntity(CoordinatorEntity[TruenasDataUpdateCoordinator], Entity):
             self._attr_name = uid.capitalize()
 
         # Device info
-        system_info = coordinator.data.get("system", {})
+        system_info = getattr(coordinator.data,"system_infos", {})
         device_name = coordinator.config_entry.data[CONF_NAME].capitalize()
         identifier = f"{device_name} {entity_description.category}"
         self._attr_device_info = DeviceInfo(
@@ -74,7 +74,8 @@ class TruenasEntity(CoordinatorEntity[TruenasDataUpdateCoordinator], Entity):
     def _handle_coordinator_update(self) -> None:
         refer = self.entity_description.refer
         reference = self.entity_description.reference
-        self.datas = self.coordinator.data.get(refer, {})
+        self.datas = getattr(self.coordinator.data, refer, {})
+        
         if self.uid is not None:
             for data in self.datas:
                 if data[reference] == self.uid:

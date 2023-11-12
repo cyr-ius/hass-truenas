@@ -118,3 +118,11 @@ app_stop:
     entity:
       integration: truenas
       domain: binary_sensor
+
+app_update:
+  name: App Update
+  description: Update a app
+  target:
+    entity:
+      integration: truenas
+      domain: binary_sensor
