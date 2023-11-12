@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from logging import getLogger
-from typing import Any
+from typing import Any, Final
 
 from homeassistant.components.update import (
     UpdateDeviceClass,
@@ -15,7 +15,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN
+from .const import DOMAIN, EXTRA_ATTRS_UPDATE
 from .coordinator import TruenasDataUpdateCoordinator
 from .entity import TruenasEntity
 
@@ -42,9 +42,10 @@ RESOURCE_LIST: Final[tuple[TruenasUpdateEntityDescription, ...]] = (
         key="system_update",
         name="Update",
         category="System",
-        refer="system",
-        attr="update_available",
+        refer="update_infos",
+        attr="available",
         title="Truenas",
+        extra_attributes=EXTRA_ATTRS_UPDATE,
     ),
 )
 
@@ -57,7 +58,7 @@ async def async_setup_entry(
     dispatcher = {"UpdateSensor": UpdateSensor}
     for description in RESOURCE_LIST:
         if description.reference:
-            for value in coordinator.data.get(description.refer, {}):
+            for value in getattr(coordinator.data, description.refer, {}):
                 entities.append(
                     dispatcher[description.func](
                         coordinator, description, value[description.reference]
@@ -77,7 +78,7 @@ class UpdateSensor(TruenasEntity, UpdateEntity):
 
     def __init__(
         self,
-        coordinator: TrueNASCoordinator,
+        coordinator: TruenasDataUpdateCoordinator,
         entity_description,
         uid: str | None = None,
     ) -> None:
@@ -91,19 +92,19 @@ class UpdateSensor(TruenasEntity, UpdateEntity):
     @property
     def installed_version(self) -> str:
         """Version installed and in use."""
-        return self.datas["version"]
+        return self.coordinator.data.system_infos["version"]
 
     @property
     def latest_version(self) -> str:
         """Latest version available for install."""
-        return self.datas["update_version"]
+        return version if (version := self.datas["version"]) else self.installed_version
 
     async def options_updated(self) -> None:
         """No action needed."""
 
     async def async_install(self, version: str, backup: bool, **kwargs: Any) -> None:
         """Install an update."""
-        self.datas["update_jobid"] = await self.coordinator.api.query(
+        self.datas["job_id"] = await self.coordinator.api.query(
             "update/update", method="post", json={"reboot": True}
         )
         await self.coordinator.async_refresh()
@@ -111,10 +112,10 @@ class UpdateSensor(TruenasEntity, UpdateEntity):
     @property
     def in_progress(self) -> int:
         """Update installation progress."""
-        if self.datas.get("update_state") != "RUNNING":
+        if self.datas.get("state") != "RUNNING":
             return False
 
-        if self.datas("update_progress") == 0:
-            self.datas["update_progress"] = 1
+        if self.datas("progress") == 0:
+            self.datas["progress"] = 1
 
-        return self.datas("update_progress")
+        return self.datas("progress")

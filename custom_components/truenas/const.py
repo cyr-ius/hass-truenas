@@ -202,3 +202,4 @@ EXTRA_ATTRS_CHART = [
 ]
 EXTRA_ATTRS_ALERT = []
 EXTRA_ATTRS_SMARTDISK = ["serial", "model", "zfs_guid"]
+EXTRA_ATTRS_UPDATE = ["current_train"]
