@@ -195,6 +195,7 @@ EXTRA_ATTRS_SERVICE = [
 EXTRA_ATTRS_CHART = [
     "container_images_update_available",
     "human_version",
+    "human_latest_version",
     "name",
     "portal",
     "update_available",

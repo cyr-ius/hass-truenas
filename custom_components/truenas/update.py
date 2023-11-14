@@ -34,7 +34,7 @@ class TruenasUpdateEntityDescription(UpdateEntityDescription):
     extra_attributes: list[str] = field(default_factory=lambda: [])
     extra_name: str | None = None
     reference: str | None = None
-    func: str = "UpdateSensor"
+    func: str = lambda *args: UpdateSensor(*args)  # pylint: disable=unnecessary-lambda
 
 
 RESOURCE_LIST: Final[tuple[TruenasUpdateEntityDescription, ...]] = (
@@ -45,7 +45,16 @@ RESOURCE_LIST: Final[tuple[TruenasUpdateEntityDescription, ...]] = (
         refer="update_infos",
         attr="available",
         title="Truenas",
-        extra_attributes=EXTRA_ATTRS_UPDATE,
+    ),
+    TruenasUpdateEntityDescription(
+        key="chart_update",
+        name="Update",
+        category="Charts",
+        refer="charts",
+        attr="available",
+        title="Charts",
+        reference="id",
+        func=lambda *args: UpdateChart(*args),  # pylint: disable=unnecessary-lambda
     ),
 )
 
@@ -55,19 +64,18 @@ async def async_setup_entry(
 ) -> None:
     coordinator = hass.data[DOMAIN][entry.entry_id]
     entities = []
-    dispatcher = {"UpdateSensor": UpdateSensor}
     for description in RESOURCE_LIST:
         if description.reference:
             for value in getattr(coordinator.data, description.refer, {}):
                 entities.append(
-                    dispatcher[description.func](
+                    description.func(
                         coordinator, description, value[description.reference]
                     )
                 )
         else:
-            entities.append(dispatcher[description.func](coordinator, description))
+            entities.append(description.func(coordinator, description))
 
-    async_add_entities(entities, update_before_add=True)
+    async_add_entities(entities)
 
 
 class UpdateSensor(TruenasEntity, UpdateEntity):
@@ -119,3 +127,44 @@ class UpdateSensor(TruenasEntity, UpdateEntity):
             self.datas["progress"] = 1
 
         return self.datas("progress")
+
+
+class UpdateChart(TruenasEntity, UpdateEntity):
+    """Define an TrueNAS Update Sensor."""
+
+    TYPE = DEVICE_UPDATE
+    _attr_device_class = UpdateDeviceClass.FIRMWARE
+
+    def __init__(
+        self,
+        coordinator: TruenasDataUpdateCoordinator,
+        entity_description,
+        uid: str | None = None,
+    ) -> None:
+        """Set up device update entity."""
+        super().__init__(coordinator, entity_description, uid)
+
+        self._attr_supported_features = UpdateEntityFeature.INSTALL
+        self._attr_title = self.entity_description.title
+
+    @property
+    def installed_version(self) -> str:
+        """Version installed and in use."""
+        return self.datas.get("human_version")
+
+    @property
+    def latest_version(self) -> str:
+        """Latest version available for install."""
+        return self.datas.get("human_latest_version")
+
+    async def options_updated(self) -> None:
+        """No action needed."""
+
+    async def async_install(self, version: str, backup: bool, **kwargs: Any) -> None:
+        """Install an update."""
+        self.datas["job_id"] = await self.coordinator.api.query(
+            "chart/release/upgrade",
+            method="post",
+            json={"release_name": self.datas["id"]},
+        )
+        await self.coordinator.async_refresh()
