@@ -486,14 +486,14 @@ class ChartBinarySensor(BinarySensor):
         if tmp_vm.get("container_images_update_available") is True:
             repo = tmp_vm.get("config", {}).get("image", {}).get("repository")
             tag = tmp_vm.get("config", {}).get("image", {}).get("tag")
-            images = await self.coordinator.api.query(
+            await self.coordinator.api.query(
                 "container/image/pull",
                 method="post",
                 json={"from_image": repo, "tag": tag},
             )
         else:
             await self.coordinator.api.query(
-                "/chart/release/upgrade",
+                "chart/release/upgrade",
                 method="post",
                 json={"release_name": self.datas["id"]},
             )
