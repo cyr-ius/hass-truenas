@@ -1,3 +1,4 @@
-exclude: 
+---
+exclude:
   - master
 delete_closed_pr: false
