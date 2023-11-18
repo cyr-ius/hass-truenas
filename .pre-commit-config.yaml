@@ -12,7 +12,7 @@ repos:
       - id: black
         args:
           - --quiet
-        files: ^((homeassistant|pylint|script|tests)/.+)?[^/]+\.py$
+        files: ^((custom_components|pylint|script|tests)/.+)?[^/]+\.py$
   - repo: https://github.com/codespell-project/codespell
     rev: v2.2.2
     hooks:
