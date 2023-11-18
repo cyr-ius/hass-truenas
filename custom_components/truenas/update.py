@@ -48,7 +48,6 @@ RESOURCE_LIST: Final[tuple[TruenasUpdateEntityDescription, ...]] = (
     ),
     TruenasUpdateEntityDescription(
         key="chart_update",
-        name="Update",
         category="Charts",
         refer="charts",
         attr="available",
@@ -81,8 +80,10 @@ async def async_setup_entry(
 class UpdateSensor(TruenasEntity, UpdateEntity):
     """Define an TrueNAS Update Sensor."""
 
-    TYPE = DEVICE_UPDATE
     _attr_device_class = UpdateDeviceClass.FIRMWARE
+    _attr_supported_features = (
+        UpdateEntityFeature.INSTALL | UpdateEntityFeature.PROGRESS
+    )
 
     def __init__(
         self,
@@ -92,9 +93,6 @@ class UpdateSensor(TruenasEntity, UpdateEntity):
     ) -> None:
         """Set up device update entity."""
         super().__init__(coordinator, entity_description, uid)
-
-        self._attr_supported_features = UpdateEntityFeature.INSTALL
-        self._attr_supported_features |= UpdateEntityFeature.PROGRESS
         self._attr_title = self.entity_description.title
 
     @property
@@ -106,9 +104,6 @@ class UpdateSensor(TruenasEntity, UpdateEntity):
     def latest_version(self) -> str:
         """Latest version available for install."""
         return version if (version := self.datas["version"]) else self.installed_version
-
-    async def options_updated(self) -> None:
-        """No action needed."""
 
     async def async_install(self, version: str, backup: bool, **kwargs: Any) -> None:
         """Install an update."""
@@ -132,8 +127,9 @@ class UpdateSensor(TruenasEntity, UpdateEntity):
 class UpdateChart(TruenasEntity, UpdateEntity):
     """Define an TrueNAS Update Sensor."""
 
-    TYPE = DEVICE_UPDATE
-    _attr_device_class = UpdateDeviceClass.FIRMWARE
+    _attr_supported_features = (
+        UpdateEntityFeature.INSTALL | UpdateEntityFeature.PROGRESS
+    )
 
     def __init__(
         self,
@@ -143,26 +139,35 @@ class UpdateChart(TruenasEntity, UpdateEntity):
     ) -> None:
         """Set up device update entity."""
         super().__init__(coordinator, entity_description, uid)
-
-        self._attr_supported_features = UpdateEntityFeature.INSTALL
-        self._attr_title = self.entity_description.title
+        self._attr_title = uid.capitalize()
+        self._installing = False
 
     @property
-    def installed_version(self) -> str:
+    def installed_version(self) -> str | None:
         """Version installed and in use."""
         return self.datas.get("human_version")
 
     @property
-    def latest_version(self) -> str:
+    def latest_version(self) -> str | None:
         """Latest version available for install."""
         return self.datas.get("human_latest_version")
 
-    async def options_updated(self) -> None:
-        """No action needed."""
+    @property
+    def release_summary(self) -> str | None:
+        """Return the release notes."""
+        return self.datas.get("description")
+
+    @property
+    def in_progress(self) -> int:
+        """Update installation progress."""
+        if self.latest_version == self.installed_version:
+            self._installing = False
+        return self._installing
 
     async def async_install(self, version: str, backup: bool, **kwargs: Any) -> None:
         """Install an update."""
-        self.datas["job_id"] = await self.coordinator.api.query(
+        self._installing = True
+        await self.coordinator.api.query(
             "chart/release/upgrade",
             method="post",
             json={"release_name": self.datas["id"]},
