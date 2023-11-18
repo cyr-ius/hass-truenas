@@ -1,31 +1,31 @@
 {
-    "config": {
-        "step": {
-            "user": {
-                "description": "Set up TrueNAS integration.",
-                "data": {
-                    "name": "Name of the integration",
-                    "host": "Host",
-                    "api_key": "API key",
-                    "ssl": "Use SSL",
-                    "verify_ssl": "Verify SSL certificate"
-                }
-            }
-        },
-        "error": {
-            "invalid_auth": "No authorization for this endpoint.",
-            "unknown": "Internal error.",
-            "cannot_connect": "No response from host."
+  "config": {
+    "step": {
+      "user": {
+        "description": "Set up TrueNAS integration.",
+        "data": {
+          "name": "Name of the integration",
+          "host": "Host",
+          "api_key": "API key",
+          "ssl": "Use SSL",
+          "verify_ssl": "Verify SSL certificate"
         }
+      }
     },
-    "options": {
-        "step": {
-            "init": {
-                "title":"Options",
-                "data": {
-                    "notify": "Enable notify"
-                }
-            }
+    "error": {
+      "invalid_auth": "No authorization for this endpoint.",
+      "unknown": "Internal error.",
+      "cannot_connect": "No response from host."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Options",
+        "data": {
+          "notify": "Enable notify"
         }
-    }    
+      }
+    }
+  }
 }

@@ -1,21 +1,21 @@
 {
-    "config": {
-        "step": {
-            "user": {
-                "description": "Configure a integração TrueNAS.",
-                "data": {
-                    "name": "Nome da integração",
-                    "host": "Host",
-                    "api_key": "Chave API",
-                    "ssl": "Usar SSL",
-                    "verify_ssl": "Verificar certificado SSL"
-                }
-            }
-        },
-        "error": {
-            "invalid_auth": "Nenhuma autorização para este endpoint.",
-            "unknown": "Erro interno.",
-            "cannot_connect": "Sem resposta do host."
+  "config": {
+    "step": {
+      "user": {
+        "description": "Configure a integração TrueNAS.",
+        "data": {
+          "name": "Nome da integração",
+          "host": "Host",
+          "api_key": "Chave API",
+          "ssl": "Usar SSL",
+          "verify_ssl": "Verificar certificado SSL"
         }
+      }
+    },
+    "error": {
+      "invalid_auth": "Nenhuma autorização para este endpoint.",
+      "unknown": "Erro interno.",
+      "cannot_connect": "Sem resposta do host."
     }
+  }
 }

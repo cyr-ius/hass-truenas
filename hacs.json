@@ -1,6 +1,6 @@
 {
-    "name": "Truenas",
-    "country": "FR",
-    "homeassistant": "2022.8.0",
-    "render_readme": true
+  "name": "Truenas",
+  "country": "FR",
+  "homeassistant": "2022.8.0",
+  "render_readme": true
 }
