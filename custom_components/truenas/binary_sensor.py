@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from logging import getLogger
+from typing import Any, Final, Mapping
 
 from homeassistant.components import persistent_notification
 from homeassistant.components.binary_sensor import (

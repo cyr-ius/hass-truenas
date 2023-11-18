@@ -4,6 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime as dt
 from logging import getLogger
+from typing import Any, Final, Mapping
 
 from homeassistant.components.sensor import (
     EntityCategory,
@@ -306,7 +307,7 @@ async def async_setup_entry(
 
 class Sensor(TruenasEntity, SensorEntity):
     @property
-    def native_value(self) -> StateType | date | datetime | Decimal:
+    def native_value(self) -> StateType | datetime | Decimal:
         """Return the value reported by the sensor."""
         return self.datas.get(self.entity_description.attr)
 
@@ -315,7 +316,7 @@ class UptimeSensor(Sensor):
     """Define an Truenas Uptime sensor."""
 
     @property
-    def native_value(self) -> StateType | date | datetime | Decimal:
+    def native_value(self) -> StateType | datetime | Decimal:
         """Return the value reported by the sensor."""
         return dt.strptime(
             self.datas.get(self.entity_description.attr), "%Y-%m-%dT%H:%M:%S%z"
@@ -335,6 +336,7 @@ class DatasetSensor(Sensor):
 
     async def snapshot(self) -> None:
         """Create dataset snapshot."""
+        ts = dt.now().isoformat(sep="_", timespec="microseconds")
         await self.coordinator.api.query(
             "zfs/snapshot",
             method="post",

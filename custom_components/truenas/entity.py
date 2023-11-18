@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from logging import getLogger
+from typing import Any, Mapping
 
 from .const import DOMAIN
 from .coordinator import TruenasDataUpdateCoordinator
@@ -22,7 +23,7 @@ class TruenasEntity(CoordinatorEntity[TruenasDataUpdateCoordinator], Entity):
 
     def __init__(
         self,
-        coordinator: TrueNASCoordinator,
+        coordinator: TruenasDataUpdateCoordinator,
         entity_description,
         uid: str | None = None,
     ) -> None:
@@ -44,7 +45,7 @@ class TruenasEntity(CoordinatorEntity[TruenasDataUpdateCoordinator], Entity):
             self._attr_name = uid.capitalize()
 
         # Device info
-        system_info = getattr(coordinator.data,"system_infos", {})
+        system_info = getattr(coordinator.data, "system_infos", {})
         device_name = coordinator.config_entry.data[CONF_NAME].capitalize()
         identifier = f"{device_name} {entity_description.category}"
         self._attr_device_info = DeviceInfo(
@@ -75,7 +76,6 @@ class TruenasEntity(CoordinatorEntity[TruenasDataUpdateCoordinator], Entity):
         refer = self.entity_description.refer
         reference = self.entity_description.reference
         self.datas = getattr(self.coordinator.data, refer, {})
-        
         if self.uid is not None:
             for data in self.datas:
                 if data[reference] == self.uid:

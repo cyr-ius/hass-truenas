@@ -17,12 +17,13 @@ from homeassistant.const import (
     CONF_HOST,
     CONF_NAME,
     CONF_SSL,
-    CONF_VERIFY_SSL
+    CONF_VERIFY_SSL,
 )
 from homeassistant.core import callback
+from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 
-from .const import DOMAIN, CONF_NOTIFY
+from .const import CONF_NOTIFY, DOMAIN
 
 DATA_SCHEMA = vol.Schema(
     {
