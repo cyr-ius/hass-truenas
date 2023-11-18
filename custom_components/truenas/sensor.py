@@ -46,6 +46,8 @@ from .const import (
 from .coordinator import TruenasDataUpdateCoordinator
 from .entity import TruenasEntity
 
+_LOGGER = getLogger(__name__)
+
 
 @dataclass
 class TruenasSensorEntityDescription(SensorEntityDescription):
