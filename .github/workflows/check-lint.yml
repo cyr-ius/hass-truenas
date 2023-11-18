@@ -1,3 +1,4 @@
+---
 name: Check Lint
 
 on: [push, pull_request]
