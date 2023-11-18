@@ -4,25 +4,21 @@ from __future__ import annotations
 import logging
 from datetime import timedelta
 
-import async_timeout
 from truenaspy import TruenasAuthenticationError, TruenasClient, TruenasError
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     CONF_API_KEY,
     CONF_HOST,
-    CONF_NAME,
     CONF_SSL,
     CONF_VERIFY_SSL,
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
-from homeassistant.helpers.debounce import Debouncer
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import DOMAIN
-from .helpers import ExtendedDict
 
 _LOGGER = logging.getLogger(__name__)
 SCAN_INTERVAL = 120
@@ -50,7 +46,7 @@ class TruenasDataUpdateCoordinator(DataUpdateCoordinator):
             await self.api.async_update()
             if self.api.is_connected is False:
                 raise UpdateFailed("Error occurred while communicating with Truenas")
-            return self.api 
+            return self.api
         except TruenasAuthenticationError as error:
             raise ConfigEntryAuthFailed from error
         except TruenasError as error:

@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from datetime import date, datetime
 from decimal import Decimal
 from logging import getLogger
-from typing import Any, Final, Mapping
+from typing import Final
 
 from homeassistant.components.sensor import (
     EntityCategory,
@@ -46,7 +46,6 @@ from .const import (
     SERVICE_SYSTEM_REBOOT,
     SERVICE_SYSTEM_SHUTDOWN,
 )
-from .coordinator import TruenasDataUpdateCoordinator
 from .entity import TruenasEntity
 
 _LOGGER = getLogger(__name__)
@@ -62,7 +61,7 @@ class TruenasSensorEntityDescription(SensorEntityDescription):
     attr: str | None = None
     extra_attributes: list[str] = field(default_factory=lambda: [])
     reference: str | None = None
-    func: str = lambda *args: Sensor(*args)  # pylint: disable=unnecessary-lambda
+    func: str = lambda *args: Sensor(*args)  # noqa
 
 
 RESOURCE_LIST: Final[tuple[TruenasSensorEntityDescription, ...]] = (
@@ -75,7 +74,7 @@ RESOURCE_LIST: Final[tuple[TruenasSensorEntityDescription, ...]] = (
         category="System",
         refer="system_infos",
         attr="uptimeEpoch",
-        func=lambda *args: UptimeSensor(*args),  # pylint: disable=unnecessary-lambda
+        func=lambda *args: UptimeSensor(*args),  # pylint: disable=E731
     ),
     TruenasSensorEntityDescription(
         key="system_cpu_temperature",
@@ -325,11 +324,11 @@ class UptimeSensor(Sensor):
         )
 
     async def restart(self) -> None:
-        """Restart TrueNAS systen."""
+        """Restart TrueNAS system."""
         await self.coordinator.api.query("system/reboot", method="post")
 
     async def stop(self) -> None:
-        """Shutdown TrueNAS systen."""
+        """Shutdown TrueNAS system."""
         await self.coordinator.api.query("system/shutdown", method="post")
 
 

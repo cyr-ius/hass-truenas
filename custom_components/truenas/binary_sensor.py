@@ -7,7 +7,6 @@ from typing import Any, Final, Mapping
 
 from homeassistant.components import persistent_notification
 from homeassistant.components.binary_sensor import (
-    BinarySensorDeviceClass,
     BinarySensorEntity,
     BinarySensorEntityDescription,
 )
@@ -51,7 +50,6 @@ from .const import (
     SERVICE_VM_START,
     SERVICE_VM_STOP,
 )
-from .coordinator import TruenasDataUpdateCoordinator
 from .entity import TruenasEntity
 
 _LOGGER = getLogger(__name__)
@@ -68,7 +66,7 @@ class TruenasBinarySensorEntityDescription(BinarySensorEntityDescription):
     attr: str | None = None
     extra_attributes: list[str] = field(default_factory=lambda: [])
     reference: str | None = None
-    func: str = lambda *args: BinarySensor(*args)  # pylint: disable=unnecessary-lambda
+    func: str = lambda *args: BinarySensor(*args)  # noqa
 
 
 RESOURCE_LIST: Final[tuple[TruenasBinarySensorEntityDescription, ...]] = (
@@ -507,7 +505,7 @@ class AlertBinarySensor(BinarySensor):
 
     @property
     def name(self):
-        return f"Alert"
+        return "Alert"
 
     @property
     def is_on(self) -> bool:

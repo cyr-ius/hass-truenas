@@ -15,7 +15,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN, EXTRA_ATTRS_UPDATE
+from .const import DOMAIN
 from .coordinator import TruenasDataUpdateCoordinator
 from .entity import TruenasEntity
 
@@ -33,7 +33,7 @@ class TruenasUpdateEntityDescription(UpdateEntityDescription):
     extra_attributes: list[str] = field(default_factory=lambda: [])
     extra_name: str | None = None
     reference: str | None = None
-    func: str = lambda *args: UpdateSensor(*args)  # pylint: disable=unnecessary-lambda
+    func: str = lambda *args: UpdateSensor(*args)  # noqa
 
 
 RESOURCE_LIST: Final[tuple[TruenasUpdateEntityDescription, ...]] = (
