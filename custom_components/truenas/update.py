@@ -20,7 +20,6 @@ from .coordinator import TruenasDataUpdateCoordinator
 from .entity import TruenasEntity
 
 _LOGGER = getLogger(__name__)
-DEVICE_UPDATE = "device_update"
 
 
 @dataclass
