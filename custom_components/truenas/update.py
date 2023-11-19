@@ -33,7 +33,7 @@ class TruenasUpdateEntityDescription(UpdateEntityDescription):
     extra_attributes: list[str] = field(default_factory=lambda: [])
     extra_name: str | None = None
     reference: str | None = None
-    func: str = lambda *args: UpdateSensor(*args)  # noqa
+    func: str = lambda *args: UpdateSensor(*args)  # noqa: E731
 
 
 RESOURCE_LIST: Final[tuple[TruenasUpdateEntityDescription, ...]] = (
@@ -52,7 +52,7 @@ RESOURCE_LIST: Final[tuple[TruenasUpdateEntityDescription, ...]] = (
         attr="available",
         title="Charts",
         reference="id",
-        func=lambda *args: UpdateChart(*args),  # pylint: disable=unnecessary-lambda
+        func=lambda *args: UpdateChart(*args),  # noqa: E731
     ),
 )
 
@@ -60,6 +60,7 @@ RESOURCE_LIST: Final[tuple[TruenasUpdateEntityDescription, ...]] = (
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
+    """Set up the platform."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
     entities = []
     for description in RESOURCE_LIST:

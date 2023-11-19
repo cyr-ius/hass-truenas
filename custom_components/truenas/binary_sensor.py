@@ -1,9 +1,10 @@
 """Truenas binary sensor platform."""
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from logging import getLogger
-from typing import Any, Final, Mapping
+from typing import Any, Final
 
 from homeassistant.components import persistent_notification
 from homeassistant.components.binary_sensor import (
@@ -66,7 +67,7 @@ class TruenasBinarySensorEntityDescription(BinarySensorEntityDescription):
     attr: str | None = None
     extra_attributes: list[str] = field(default_factory=lambda: [])
     reference: str | None = None
-    func: str = lambda *args: BinarySensor(*args)  # noqa
+    func: str = lambda *args: BinarySensor(*args)  # noqa: E731
 
 
 RESOURCE_LIST: Final[tuple[TruenasBinarySensorEntityDescription, ...]] = (
@@ -175,8 +176,8 @@ SERVICES = [
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
+    """Set up the platform."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
-
     platform = entity_platform.async_get_current_platform()
     for service in SERVICES:
         platform.async_register_entity_service(*service)
@@ -505,6 +506,7 @@ class AlertBinarySensor(BinarySensor):
 
     @property
     def name(self):
+        """Return name."""
         return "Alert"
 
     @property

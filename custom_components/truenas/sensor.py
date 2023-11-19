@@ -61,7 +61,7 @@ class TruenasSensorEntityDescription(SensorEntityDescription):
     attr: str | None = None
     extra_attributes: list[str] = field(default_factory=lambda: [])
     reference: str | None = None
-    func: str = lambda *args: Sensor(*args)  # noqa
+    func: str = lambda *args: Sensor(*args)  # noqa: E731
 
 
 RESOURCE_LIST: Final[tuple[TruenasSensorEntityDescription, ...]] = (
@@ -74,7 +74,7 @@ RESOURCE_LIST: Final[tuple[TruenasSensorEntityDescription, ...]] = (
         category="System",
         refer="system_infos",
         attr="uptimeEpoch",
-        func=lambda *args: UptimeSensor(*args),  # pylint: disable=E731
+        func=lambda *args: UptimeSensor(*args),  # noqa: E731
     ),
     TruenasSensorEntityDescription(
         key="system_cpu_temperature",
@@ -285,8 +285,8 @@ SERVICES = [
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
+    """Set up the platform."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
-
     platform = entity_platform.async_get_current_platform()
     for service in SERVICES:
         platform.async_register_entity_service(*service)
@@ -307,6 +307,8 @@ async def async_setup_entry(
 
 
 class Sensor(TruenasEntity, SensorEntity):
+    """Generic sensor."""
+
     @property
     def native_value(self) -> StateType | date | datetime | Decimal:
         """Return the value reported by the sensor."""
