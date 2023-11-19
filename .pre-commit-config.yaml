@@ -1,7 +1,7 @@
 ---
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.1
+    rev: v0.1.6
     hooks:
       - id: ruff
         args:
@@ -12,7 +12,6 @@ repos:
       - id: black
         args:
           - --quiet
-        files: ^((custom_components|pylint|script|tests)/.+)?[^/]+\.py$
   - repo: https://github.com/codespell-project/codespell
     rev: v2.2.2
     hooks:
@@ -22,7 +21,6 @@ repos:
           - --skip="./.*,*.csv,*.json,*.ambr"
           - --quiet-level=2
         exclude_types: [csv, json]
-        exclude: ^tests/fixtures/|tests/components/.*/snapshots/
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0
     hooks:
@@ -51,4 +49,4 @@ repos:
           - --py311-plus
           - --force
           - --keep-updates
-        files: ^(custom_components|tests|script)/.+\.py$
+        files: ^custom_components/.+\.py$
