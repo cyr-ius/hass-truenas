@@ -9,6 +9,8 @@ PLATFORMS = [
     Platform.UPDATE,
 ]
 
+UPDATE_IMG = "container_images_update_available"
+
 SERVICE_CLOUDSYNC_RUN = "cloudsync_run"
 SCHEMA_SERVICE_CLOUDSYNC_RUN = {}
 

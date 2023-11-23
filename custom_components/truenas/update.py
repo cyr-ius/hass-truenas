@@ -15,7 +15,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN
+from .const import DOMAIN, UPDATE_IMG
 from .coordinator import TruenasDataUpdateCoordinator
 from .entity import TruenasEntity
 
@@ -150,6 +150,8 @@ class UpdateChart(TruenasEntity, UpdateEntity):
     @property
     def latest_version(self) -> str | None:
         """Latest version available for install."""
+        if self.datas.get(UPDATE_IMG) is True:
+            return "Update image"
         return self.datas.get("human_latest_version")
 
     @property
