@@ -8,6 +8,6 @@
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/cyr-ius/hass-truenas/issues",
   "loggers": ["truenaspy"],
-  "requirements": ["truenaspy==0.5.8"],
+  "requirements": ["truenaspy==0.6.2"],
   "version": "0.6.7"
 }
