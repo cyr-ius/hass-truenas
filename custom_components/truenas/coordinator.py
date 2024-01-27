@@ -4,19 +4,13 @@ from __future__ import annotations
 import logging
 from datetime import timedelta
 
-from truenaspy import TruenasAuthenticationError, TruenasClient, TruenasError
-
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import (
-    CONF_API_KEY,
-    CONF_HOST,
-    CONF_SSL,
-    CONF_VERIFY_SSL,
-)
+from homeassistant.const import CONF_API_KEY, CONF_HOST, CONF_SSL, CONF_VERIFY_SSL
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from truenaspy import TruenasAuthenticationError, TruenasClient, TruenasError
 
 from .const import DOMAIN
 
