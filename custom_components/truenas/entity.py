@@ -1,8 +1,9 @@
 """Truenas entity model."""
 from __future__ import annotations
 
+from collections.abc import Mapping
 from logging import getLogger
-from typing import Any, Mapping
+from typing import Any
 
 from .const import DOMAIN
 from .coordinator import TruenasDataUpdateCoordinator
