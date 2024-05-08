@@ -324,7 +324,7 @@ class Sensor(TruenasEntity, SensorEntity):
     @property
     def native_value(self) -> StateType | date | datetime | Decimal:
         """Return the value reported by the sensor."""
-        return self.datas.get(self.entity_description.attr)
+        return self.data.get(self.entity_description.attr)
 
 
 class UptimeSensor(Sensor):
@@ -334,7 +334,7 @@ class UptimeSensor(Sensor):
     def native_value(self) -> StateType | date | datetime | Decimal:
         """Return the value reported by the sensor."""
         return datetime.strptime(
-            self.datas.get(self.entity_description.attr), "%Y-%m-%dT%H:%M:%S%z"
+            self.data.get(self.entity_description.attr), "%Y-%m-%dT%H:%M:%S%z"
         )
 
     async def restart(self) -> None:

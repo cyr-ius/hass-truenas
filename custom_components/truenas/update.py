@@ -103,11 +103,11 @@ class UpdateSensor(TruenasEntity, UpdateEntity):
     @property
     def latest_version(self) -> str:
         """Latest version available for install."""
-        return version if (version := self.datas["version"]) else self.installed_version
+        return version if (version := self.data["version"]) else self.installed_version
 
     async def async_install(self, version: str, backup: bool, **kwargs: Any) -> None:
         """Install an update."""
-        self.datas["job_id"] = await self.coordinator.api.query(
+        self.data["job_id"] = await self.coordinator.api.query(
             "update/update", method="post", json={"reboot": True}
         )
         await self.coordinator.async_refresh()
@@ -115,13 +115,13 @@ class UpdateSensor(TruenasEntity, UpdateEntity):
     @property
     def in_progress(self) -> int:
         """Update installation progress."""
-        if self.datas.get("state") != "RUNNING":
+        if self.data.get("state") != "RUNNING":
             return False
 
-        if self.datas("progress") == 0:
-            self.datas["progress"] = 1
+        if self.data("progress") == 0:
+            self.data["progress"] = 1
 
-        return self.datas("progress")
+        return self.data("progress")
 
 
 class UpdateChart(TruenasEntity, UpdateEntity):
@@ -145,19 +145,19 @@ class UpdateChart(TruenasEntity, UpdateEntity):
     @property
     def installed_version(self) -> str | None:
         """Version installed and in use."""
-        return self.datas.get("human_version")
+        return self.data.get("human_version")
 
     @property
     def latest_version(self) -> str | None:
         """Latest version available for install."""
-        if self.datas.get(UPDATE_IMG) is True:
+        if self.data.get(UPDATE_IMG) is True:
             return "Update image"
-        return self.datas.get("human_latest_version")
+        return self.data.get("human_latest_version")
 
     @property
     def release_summary(self) -> str | None:
         """Return the release notes."""
-        return self.datas.get("description")
+        return self.data.get("description")
 
     @property
     def in_progress(self) -> int:
@@ -172,6 +172,6 @@ class UpdateChart(TruenasEntity, UpdateEntity):
         await self.coordinator.api.query(
             "chart/release/upgrade",
             method="post",
-            json={"release_name": self.datas["id"]},
+            json={"release_name": self.data["id"]},
         )
         await self.coordinator.async_refresh()

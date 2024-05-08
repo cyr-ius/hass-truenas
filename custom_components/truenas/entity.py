@@ -30,11 +30,11 @@ class TruenasEntity(CoordinatorEntity[TruenasDataUpdateCoordinator], Entity):
         super().__init__(coordinator)
         self.entity_description = entity_description
         self.uid = uid
-        self.datas = getattr(coordinator.data, entity_description.refer, {})
+        self.data = getattr(coordinator.data, entity_description.refer, {})
         if uid is not None:
-            for data in self.datas:
+            for data in self.data:
                 if data[entity_description.reference] == uid:
-                    self.datas = data
+                    self.data = data
 
         self._attr_name = None
         if isinstance(entity_description.name, str):
@@ -68,18 +68,18 @@ class TruenasEntity(CoordinatorEntity[TruenasDataUpdateCoordinator], Entity):
         # Unique id
         self._attr_unique_id = entity_description.key
         if reference := entity_description.reference:
-            ref_str = slugify(str(self.datas.get(reference, "")).lower())
+            ref_str = slugify(str(self.data.get(reference, "")).lower())
             self._attr_unique_id = f"{device_name}-{entity_description.key}-{ref_str}"
 
     @callback
     def _handle_coordinator_update(self) -> None:
         refer = self.entity_description.refer
         reference = self.entity_description.reference
-        self.datas = getattr(self.coordinator.data, refer, {})
+        self.data = getattr(self.coordinator.data, refer, {})
         if self.uid is not None:
-            for data in self.datas:
+            for data in self.data:
                 if data[reference] == self.uid:
-                    self.datas = data
+                    self.data = data
         self.async_write_ha_state()
         super()._handle_coordinator_update()
 
@@ -87,7 +87,7 @@ class TruenasEntity(CoordinatorEntity[TruenasDataUpdateCoordinator], Entity):
     def extra_state_attributes(self) -> Mapping[str, Any]:
         """Return the state attributes."""
         return {
-            format_attribute(key): self.datas.get(key)
+            format_attribute(key): self.data.get(key)
             for key in self.entity_description.extra_attributes
         }
 
