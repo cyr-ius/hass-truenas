@@ -1,4 +1,5 @@
 """Truenas binary sensor platform."""
+
 from __future__ import annotations
 
 from collections.abc import Mapping
@@ -11,14 +12,13 @@ from homeassistant.components.binary_sensor import (
     BinarySensorEntity,
     BinarySensorEntityDescription,
 )
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_platform
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from . import TruenasConfigEntry
 from .const import (
     CONF_NOTIFY,
-    DOMAIN,
     EXTRA_ATTRS_ALERT,
     EXTRA_ATTRS_CHART,
     EXTRA_ATTRS_JAIL,
@@ -65,7 +65,7 @@ class TruenasBinarySensorEntityDescription(BinarySensorEntityDescription):
     category: str | None = None
     refer: str | None = None
     attr: str | None = None
-    extra_attributes: list[str] = field(default_factory=lambda: [])
+    extra_attributes: list[str] = field(default_factory=list)
     reference: str | None = None
     func: str = lambda *args: BinarySensor(*args)  # noqa: E731
 
@@ -174,10 +174,12 @@ SERVICES = [
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
+    hass: HomeAssistant,
+    entry: TruenasConfigEntry,
+    async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the platform."""
-    coordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry.runtime_data
     platform = entity_platform.async_get_current_platform()
     for service in SERVICES:
         platform.async_register_entity_service(*service)
@@ -222,9 +224,7 @@ class JailBinarySensor(BinarySensor):
         """Start a Jail."""
         tmp_jail = await self.coordinator.api.query(f"jail/id/{self.data['id']}")
         if "state" not in tmp_jail:
-            _LOGGER.error(
-                "Jail %s (%s) invalid", self.data["comment"], self.data["id"]
-            )
+            _LOGGER.error("Jail %s (%s) invalid", self.data["comment"], self.data["id"])
             return
 
         if tmp_jail["state"] != "down":
@@ -242,9 +242,7 @@ class JailBinarySensor(BinarySensor):
         tmp_jail = await self.coordinator.api.query(f"jail/id/{self.data['id']}")
 
         if "state" not in tmp_jail:
-            _LOGGER.error(
-                "Jail %s (%s) invalid", self.data["comment"], self.data["id"]
-            )
+            _LOGGER.error("Jail %s (%s) invalid", self.data["comment"], self.data["id"])
             return
 
         if tmp_jail["state"] != "up":
@@ -262,9 +260,7 @@ class JailBinarySensor(BinarySensor):
         tmp_jail = await self.coordinator.api.query(f"jail/id/{self.data['id']}")
 
         if "state" not in tmp_jail:
-            _LOGGER.error(
-                "Jail %s (%s) invalid", self.data["comment"], self.data["id"]
-            )
+            _LOGGER.error("Jail %s (%s) invalid", self.data["comment"], self.data["id"])
             return
 
         if tmp_jail["state"] != "up":
@@ -310,14 +306,10 @@ class VMBinarySensor(BinarySensor):
             return
 
         if tmp_vm["status"]["state"] != "RUNNING":
-            _LOGGER.warning(
-                "VM %s (%s) is not up", self.data["name"], self.data["id"]
-            )
+            _LOGGER.warning("VM %s (%s) is not up", self.data["name"], self.data["id"])
             return
 
-        await self.coordinator.api.query(
-            f"vm/id/{self.data['id']}/stop", method="post"
-        )
+        await self.coordinator.api.query(f"vm/id/{self.data['id']}/stop", method="post")
 
 
 class ServiceBinarySensor(BinarySensor):
@@ -455,9 +447,7 @@ class ChartBinarySensor(BinarySensor):
             return
 
         if tmp_vm["status"] != "ACTIVE":
-            _LOGGER.warning(
-                "VM %s (%s) is not up", self.data["name"], self.data["id"]
-            )
+            _LOGGER.warning("VM %s (%s) is not up", self.data["name"], self.data["id"])
             return
 
         await self.coordinator.api.query(
@@ -480,9 +470,7 @@ class ChartBinarySensor(BinarySensor):
             return
 
         if tmp_vm["status"] != "ACTIVE":
-            _LOGGER.warning(
-                "VM %s (%s) is not up", self.data["name"], self.data["id"]
-            )
+            _LOGGER.warning("VM %s (%s) is not up", self.data["name"], self.data["id"])
             return
 
         if tmp_vm.get("container_images_update_available") is True:

@@ -1,4 +1,5 @@
 """Truenas update sensor platform."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -11,11 +12,11 @@ from homeassistant.components.update import (
     UpdateEntityDescription,
     UpdateEntityFeature,
 )
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN, UPDATE_IMG
+from . import TruenasConfigEntry
+from .const import UPDATE_IMG
 from .coordinator import TruenasDataUpdateCoordinator
 from .entity import TruenasEntity
 
@@ -30,7 +31,7 @@ class TruenasUpdateEntityDescription(UpdateEntityDescription):
     category: str | None = None
     refer: str | None = None
     attr: str | None = "available"
-    extra_attributes: list[str] = field(default_factory=lambda: [])
+    extra_attributes: list[str] = field(default_factory=list)
     extra_name: str | None = None
     reference: str | None = None
     func: str = lambda *args: UpdateSensor(*args)  # noqa: E731
@@ -58,10 +59,12 @@ RESOURCE_LIST: Final[tuple[TruenasUpdateEntityDescription, ...]] = (
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
+    hass: HomeAssistant,
+    entry: TruenasConfigEntry,
+    async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the platform."""
-    coordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry.runtime_data
     entities = []
     for description in RESOURCE_LIST:
         if description.reference:

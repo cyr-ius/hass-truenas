@@ -1,4 +1,5 @@
 """Truenas binary sensor platform."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -14,7 +15,6 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     PERCENTAGE,
     UnitOfDataRate,
@@ -26,8 +26,8 @@ from homeassistant.helpers import entity_platform
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import StateType
 
+from . import TruenasConfigEntry
 from .const import (
-    DOMAIN,
     EXTRA_ATTRS_CLOUDSYNC,
     EXTRA_ATTRS_CPU,
     EXTRA_ATTRS_DATASET,
@@ -59,7 +59,7 @@ class TruenasSensorEntityDescription(SensorEntityDescription):
     category: str | None = None
     refer: str | None = None
     attr: str | None = None
-    extra_attributes: list[str] = field(default_factory=lambda: [])
+    extra_attributes: list[str] = field(default_factory=list)
     reference: str | None = None
     func: str = lambda *args: Sensor(*args)  # noqa: E731
 
@@ -295,10 +295,12 @@ SERVICES = [
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
+    hass: HomeAssistant,
+    entry: TruenasConfigEntry,
+    async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the platform."""
-    coordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry.runtime_data
     platform = entity_platform.async_get_current_platform()
     for service in SERVICES:
         platform.async_register_entity_service(*service)
