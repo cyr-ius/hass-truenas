@@ -1,16 +1,17 @@
 """Config flow to configure Truenas."""
+
 from __future__ import annotations
 
 import logging
 from typing import Any
 
-import voluptuous as vol
 from truenaspy import (
-    TruenasAuthenticationError,
+    AuthenticationFailed,
+    ConnectionError,
     TruenasClient,
-    TruenasConnectionError,
-    TruenasError,
+    TruenasException,
 )
+import voluptuous as vol
 
 from homeassistant import config_entries
 from homeassistant.const import (
@@ -74,12 +75,12 @@ class TruenasFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 )
                 connected = await api.async_is_alive()
                 if connected is False:
-                    raise TruenasConnectionError("Truenas not response")
-            except TruenasAuthenticationError:
+                    raise AuthenticationFailed("Truenas not response")
+            except AuthenticationFailed:
                 errors["base"] = "invalid_auth"
-            except TruenasConnectionError:
+            except ConnectionError:
                 errors["base"] = "cannot_connect"
-            except TruenasError:
+            except TruenasException:
                 errors["base"] = "unknown"
             else:
                 return self.async_create_entry(

@@ -1,8 +1,11 @@
 """Coordinator platform."""
+
 from __future__ import annotations
 
-import logging
 from datetime import timedelta
+import logging
+
+from truenaspy import AuthenticationFailed, TruenasClient, TruenasException
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_API_KEY, CONF_HOST, CONF_SSL, CONF_VERIFY_SSL
@@ -10,7 +13,6 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
-from truenaspy import TruenasAuthenticationError, TruenasClient, TruenasError
 
 from .const import DOMAIN
 
@@ -40,8 +42,9 @@ class TruenasDataUpdateCoordinator(DataUpdateCoordinator):
             await self.api.async_update()
             if self.api.is_connected is False:
                 raise UpdateFailed("Error occurred while communicating with Truenas")
-            return self.api
-        except TruenasAuthenticationError as error:
+        except AuthenticationFailed as error:
             raise ConfigEntryAuthFailed from error
-        except TruenasError as error:
+        except TruenasException as error:
             raise UpdateFailed(error) from error
+        else:
+            return self.api

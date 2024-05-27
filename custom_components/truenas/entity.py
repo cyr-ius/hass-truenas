@@ -1,20 +1,22 @@
 """Truenas entity model."""
+
 from __future__ import annotations
 
 from collections.abc import Mapping
 from logging import getLogger
 from typing import Any
 
-from .const import DOMAIN
-from .coordinator import TruenasDataUpdateCoordinator
-from .helpers import format_attribute
-
-_LOGGER = getLogger(__name__)
 from homeassistant.const import CONF_NAME
 from homeassistant.core import callback
 from homeassistant.helpers.entity import DeviceInfo, Entity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import slugify
+
+from .const import DOMAIN
+from .coordinator import TruenasDataUpdateCoordinator
+from .helpers import format_attribute
+
+_LOGGER = getLogger(__name__)
 
 
 class TruenasEntity(CoordinatorEntity[TruenasDataUpdateCoordinator], Entity):
@@ -28,6 +30,7 @@ class TruenasEntity(CoordinatorEntity[TruenasDataUpdateCoordinator], Entity):
         entity_description,
         uid: str | None = None,
     ) -> None:
+        """Initialize."""
         super().__init__(coordinator)
         self.entity_description = entity_description
         self.uid = uid
@@ -94,20 +97,20 @@ class TruenasEntity(CoordinatorEntity[TruenasDataUpdateCoordinator], Entity):
 
     async def start(self):
         """Run function."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
     async def stop(self):
         """Stop function."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
     async def restart(self):
         """Restart function."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
     async def reload(self):
         """Reload function."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
     async def snapshot(self):
         """Snapshot function."""
-        raise NotImplementedError()
+        raise NotImplementedError
