@@ -8,7 +8,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceEntry
 
-from .const import DOMAIN, PLATFORMS
+from .const import PLATFORMS
 from .coordinator import TruenasDataUpdateCoordinator
 
 type TruenasConfigEntry = ConfigEntry[TruenasDataUpdateCoordinator]
@@ -22,7 +22,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: TruenasConfigEntry) -> b
     await coordinator.async_config_entry_first_refresh()
     entry.runtime_data = coordinator
 
-    hass.data[DOMAIN][entry.entry_id] = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     return True
