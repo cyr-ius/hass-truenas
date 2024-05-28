@@ -188,11 +188,10 @@ async def async_setup_entry(
     for description in RESOURCE_LIST:
         if description.reference:
             for value in getattr(coordinator.data, description.refer, {}):
-                entities.append(
-                    description.func(
-                        coordinator, description, value[description.reference]
-                    )
+                obj = description.func(
+                    coordinator, description, value[description.reference]
                 )
+                entities.append(obj)
         else:
             entities.append(description.func(coordinator, description))
 
@@ -222,7 +221,7 @@ class JailBinarySensor(BinarySensor):
 
     async def start(self):
         """Start a Jail."""
-        tmp_jail = await self.coordinator.api.query(f"jail/id/{self.data['id']}")
+        tmp_jail = await self.coordinator.api.async_get_jail(id=self.data["id"])
         if "state" not in tmp_jail:
             _LOGGER.error("Jail %s (%s) invalid", self.data["comment"], self.data["id"])
             return
@@ -233,13 +232,11 @@ class JailBinarySensor(BinarySensor):
             )
             return
 
-        await self.coordinator.api.query(
-            "jail/start", method="post", json=self.data["id"]
-        )
+        await self.coordinator.api.async_start_jail(id=self.data["id"])
 
     async def stop(self):
         """Stop a Jail."""
-        tmp_jail = await self.coordinator.api.query(f"jail/id/{self.data['id']}")
+        tmp_jail = await self.coordinator.api.async_get_jail(id=self.data["id"])
 
         if "state" not in tmp_jail:
             _LOGGER.error("Jail %s (%s) invalid", self.data["comment"], self.data["id"])
@@ -251,13 +248,11 @@ class JailBinarySensor(BinarySensor):
             )
             return
 
-        await self.coordinator.api.query(
-            "jail/stop", method="post", json={"jail": self.data["id"]}
-        )
+        await self.coordinator.api.async_stop_jail(id=self.data["id"])
 
     async def restart(self):
         """Restart a Jail."""
-        tmp_jail = await self.coordinator.api.query(f"jail/id/{self.data['id']}")
+        tmp_jail = await self.coordinator.api.async_get_jail(id=self.data["id"])
 
         if "state" not in tmp_jail:
             _LOGGER.error("Jail %s (%s) invalid", self.data["comment"], self.data["id"])
@@ -269,9 +264,7 @@ class JailBinarySensor(BinarySensor):
             )
             return
 
-        await self.coordinator.api.query(
-            "jail/restart", method="post", json=self.data["id"]
-        )
+        await self.coordinator.api.async_restart_jail(id=self.data["id"])
 
 
 class VMBinarySensor(BinarySensor):
@@ -279,7 +272,7 @@ class VMBinarySensor(BinarySensor):
 
     async def start(self, overcommit: bool = False):
         """Start a VM."""
-        tmp_vm = await self.coordinator.api.query(f"vm/id/{self.data['id']}")
+        tmp_vm = await self.coordinator.api.async_get_virtualmachine(id=self.data["id"])
 
         if "status" not in tmp_vm:
             _LOGGER.error("VM %s (%s) invalid", self.data["name"], self.data["id"])
@@ -291,15 +284,11 @@ class VMBinarySensor(BinarySensor):
             )
             return
 
-        await self.coordinator.api.query(
-            f"vm/id/{self.data['id']}/start",
-            method="post",
-            json={"overcommit": overcommit},
-        )
+        await self.coordinator.api.async_start_virtualmachine(id=self.data["id"])
 
     async def stop(self):
         """Stop a VM."""
-        tmp_vm = await self.coordinator.api.query(f"vm/id/{self.data['id']}")
+        tmp_vm = await self.coordinator.api.async_get_virtualmachine(id=self.data["id"])
 
         if "status" not in tmp_vm:
             _LOGGER.error("VM %s (%s) invalid", self.data["name"], self.data["id"])
@@ -309,7 +298,7 @@ class VMBinarySensor(BinarySensor):
             _LOGGER.warning("VM %s (%s) is not up", self.data["name"], self.data["id"])
             return
 
-        await self.coordinator.api.query(f"vm/id/{self.data['id']}/stop", method="post")
+        await self.coordinator.api.async_stop_virtualmachine(id=self.data["id"])
 
 
 class ServiceBinarySensor(BinarySensor):
@@ -317,7 +306,7 @@ class ServiceBinarySensor(BinarySensor):
 
     async def start(self):
         """Start a Service."""
-        tmp_service = await self.coordinator.api.query(f"service/id/{self.data['id']}")
+        tmp_service = await self.coordinator.api.async_get_service(id=self.data["id"])
 
         if "state" not in tmp_service:
             _LOGGER.error(
@@ -327,20 +316,16 @@ class ServiceBinarySensor(BinarySensor):
 
         if tmp_service["state"] != "STOPPED":
             _LOGGER.warning(
-                "Service %s (%s) is not stopped",
-                self.data["service"],
-                self.data["id"],
+                "Service %s (%s) is not stopped", self.data["service"], self.data["id"]
             )
             return
 
-        await self.coordinator.api.query(
-            "service/start", method="post", json={"service": self.data["service"]}
-        )
+        await self.coordinator.api.async_start_service(service=self.data["service"])
         await self.coordinator.async_refresh()
 
     async def stop(self):
         """Stop a Service."""
-        tmp_service = await self.coordinator.api.query(f"service/id/{self.data['id']}")
+        tmp_service = await self.coordinator.api.async_get_service(id=self.data["id"])
 
         if "state" not in tmp_service:
             _LOGGER.error(
@@ -350,20 +335,16 @@ class ServiceBinarySensor(BinarySensor):
 
         if tmp_service["state"] == "STOPPED":
             _LOGGER.warning(
-                "Service %s (%s) is not running",
-                self.data["service"],
-                self.data["id"],
+                "Service %s (%s) is not running", self.data["service"], self.data["id"]
             )
             return
 
-        await self.coordinator.api.query(
-            "service/stop", method="post", json={"service": self.data["service"]}
-        )
+        await self.coordinator.api.async_stop_service(service=self.data["service"])
         await self.coordinator.async_refresh()
 
     async def restart(self):
         """Restart a Service."""
-        tmp_service = await self.coordinator.api.query(f"service/id/{self.data['id']}")
+        tmp_service = await self.coordinator.api.async_get_service(id=self.data["id"])
 
         if "state" not in tmp_service:
             _LOGGER.error(
@@ -373,20 +354,16 @@ class ServiceBinarySensor(BinarySensor):
 
         if tmp_service["state"] == "STOPPED":
             _LOGGER.warning(
-                "Service %s (%s) is not running",
-                self.data["service"],
-                self.data["id"],
+                "Service %s (%s) is not running", self.data["service"], self.data["id"]
             )
             return
 
-        await self.coordinator.api.query(
-            "service/restart", method="post", json={"service": self.data["service"]}
-        )
+        await self.coordinator.api.async_restart_service(service=self.data["service"])
         await self.coordinator.async_refresh()
 
     async def reload(self):
         """Reload a Service."""
-        tmp_service = self.coordinator.api.query(f"service/id/{self.data['id']}")
+        tmp_service = await self.coordinator.api.async_get_service(id=self.data["id"])
 
         if "state" not in tmp_service:
             _LOGGER.error(
@@ -396,15 +373,11 @@ class ServiceBinarySensor(BinarySensor):
 
         if tmp_service["state"] == "STOPPED":
             _LOGGER.warning(
-                "Service %s (%s) is not running",
-                self.data["service"],
-                self.data["id"],
+                "Service %s (%s) is not running", self.data["service"], self.data["id"]
             )
             return
 
-        await self.coordinator.api.query(
-            "service/reload", method="post", json={"service": self.data["service"]}
-        )
+        await self.coordinator.api.async_reload_service(service=self.data["service"])
         await self.coordinator.async_refresh()
 
 
@@ -413,9 +386,7 @@ class ChartBinarySensor(BinarySensor):
 
     async def start(self):
         """Start a chart."""
-        tmp_vm = await self.coordinator.api.query(
-            f"/chart/release/id/{self.data['id']}"
-        )
+        tmp_vm = await self.coordinator.api.async_get_chart(id=self.data["id"])
 
         if "status" not in tmp_vm:
             _LOGGER.error("VM %s (%s) invalid", self.data["name"], self.data["id"])
@@ -427,20 +398,11 @@ class ChartBinarySensor(BinarySensor):
             )
             return
 
-        await self.coordinator.api.query(
-            "/chart/release/scale",
-            method="post",
-            json={
-                "release_name": self.data["id"],
-                "scale_options": {"replica_count": 1},
-            },
-        )
+        await self.coordinator.api.async_start_chart(id=self.data["id"])
 
     async def stop(self):
         """Stop a chart."""
-        tmp_vm = await self.coordinator.api.query(
-            f"/chart/release/id/{self.data['id']}"
-        )
+        tmp_vm = await self.coordinator.api.async_get_chart(id=self.data["id"])
 
         if "status" not in tmp_vm:
             _LOGGER.error("VM %s (%s) invalid", self.data["name"], self.data["id"])
@@ -450,20 +412,11 @@ class ChartBinarySensor(BinarySensor):
             _LOGGER.warning("VM %s (%s) is not up", self.data["name"], self.data["id"])
             return
 
-        await self.coordinator.api.query(
-            "/chart/release/scale",
-            method="post",
-            json={
-                "release_name": self.data["id"],
-                "scale_options": {"replica_count": 0},
-            },
-        )
+        await self.coordinator.api.async_stop_chart(id=self.data["id"])
 
     async def upgrade(self):
         """Update a chart."""
-        tmp_vm = await self.coordinator.api.query(
-            f"/chart/release/id/{self.data['id']}"
-        )
+        tmp_vm = await self.coordinator.api.async_get_chart(id=self.data["id"])
 
         if "status" not in tmp_vm:
             _LOGGER.error("VM %s (%s) invalid", self.data["name"], self.data["id"])
@@ -476,17 +429,9 @@ class ChartBinarySensor(BinarySensor):
         if tmp_vm.get("container_images_update_available") is True:
             repo = tmp_vm.get("config", {}).get("image", {}).get("repository")
             tag = tmp_vm.get("config", {}).get("image", {}).get("tag")
-            await self.coordinator.api.query(
-                "container/image/pull",
-                method="post",
-                json={"from_image": repo, "tag": tag},
-            )
+            await self.coordinator.api.async_update_chart_image(repo=repo, tag=tag)
         else:
-            await self.coordinator.api.query(
-                "chart/release/upgrade",
-                method="post",
-                json={"release_name": self.data["id"]},
-            )
+            await self.coordinator.api.async_update_chart(id=self.data["id"])
 
 
 class AlertBinarySensor(BinarySensor):

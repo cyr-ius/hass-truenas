@@ -341,11 +341,11 @@ class UptimeSensor(Sensor):
 
     async def restart(self) -> None:
         """Restart TrueNAS system."""
-        await self.coordinator.api.query("system/reboot", method="post")
+        await self.coordinator.api.async_restart_system()
 
     async def stop(self) -> None:
         """Shutdown TrueNAS system."""
-        await self.coordinator.api.query("system/shutdown", method="post")
+        await self.coordinator.api.async_shutdown_system()
 
 
 class DatasetSensor(Sensor):
@@ -353,12 +353,7 @@ class DatasetSensor(Sensor):
 
     async def snapshot(self) -> None:
         """Create dataset snapshot."""
-        ts = datetime.now().isoformat(sep="_", timespec="microseconds")
-        await self.coordinator.api.query(
-            "zfs/snapshot",
-            method="post",
-            json={"dataset": f"{self.ref['name']}", "name": f"custom-{ts}"},
-        )
+        await self.coordinator.api.async_take_snapshot(name=self.ref["name"])
 
 
 class ClousyncSensor(Sensor):
@@ -366,7 +361,7 @@ class ClousyncSensor(Sensor):
 
     async def start(self) -> None:
         """Run cloudsync job."""
-        tmp_job = await self.coordinator.api.query(f"cloudsync/id/{self.ref['id']}")
+        tmp_job = await self.coordinator.api.async_get_cloudsync(id=self.ref["id"])
 
         if "job" not in tmp_job:
             _LOGGER.error(
@@ -383,6 +378,4 @@ class ClousyncSensor(Sensor):
             )
             return
 
-        await self.coordinator.api.query(
-            f"cloudsync/id/{self._ref['id']}/sync", method="post"
-        )
+        await self.coordinator.api.async_sync_cloudsync(id=self.ref["id"])

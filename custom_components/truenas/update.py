@@ -110,9 +110,7 @@ class UpdateSensor(TruenasEntity, UpdateEntity):
 
     async def async_install(self, version: str, backup: bool, **kwargs: Any) -> None:
         """Install an update."""
-        self.data["job_id"] = await self.coordinator.api.query(
-            "update/update", method="post", json={"reboot": True}
-        )
+        await self.coordinator.api.async_update_system(reboot=True)
         await self.coordinator.async_refresh()
 
     @property
@@ -172,9 +170,5 @@ class UpdateChart(TruenasEntity, UpdateEntity):
     async def async_install(self, version: str, backup: bool, **kwargs: Any) -> None:
         """Install an update."""
         self._installing = True
-        await self.coordinator.api.query(
-            "chart/release/upgrade",
-            method="post",
-            json={"release_name": self.data["id"]},
-        )
+        await self.coordinator.api.async_update_chart(id=id)
         await self.coordinator.async_refresh()
