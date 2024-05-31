@@ -68,12 +68,17 @@ async def async_setup_entry(
     entities = []
     for description in RESOURCE_LIST:
         if description.reference:
-            for value in getattr(coordinator.data, description.refer, {}):
-                entities.append(
-                    description.func(
-                        coordinator, description, value[description.reference]
-                    )
-                )
+            specs_entities = [
+                description.func(coordinator, description, value[description.reference])
+                for value in getattr(coordinator.data, description.refer, {})
+            ]
+            entities.extend(specs_entities)
+            # for value in getattr(coordinator.data, description.refer, {}):
+            #     entities.append(
+            #         description.func(
+            #             coordinator, description, value[description.reference]
+            #         )
+            #     )
         else:
             entities.append(description.func(coordinator, description))
 
@@ -170,5 +175,5 @@ class UpdateChart(TruenasEntity, UpdateEntity):
     async def async_install(self, version: str, backup: bool, **kwargs: Any) -> None:
         """Install an update."""
         self._installing = True
-        await self.coordinator.api.async_update_chart(id=id)
+        await self.coordinator.api.async_update_chart(id=self.data["id"])
         await self.coordinator.async_refresh()
