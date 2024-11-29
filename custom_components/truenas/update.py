@@ -55,6 +55,15 @@ RESOURCE_LIST: Final[tuple[TruenasUpdateEntityDescription, ...]] = (
         reference="id",
         func=lambda *args: UpdateChart(*args),  # noqa: E731
     ),
+    TruenasUpdateEntityDescription(
+        key="app_update",
+        category="Apps",
+        refer="apps",
+        attr="upgrade_available",
+        title="Apps",
+        reference="id",
+        func=lambda *args: UpdateApp(*args),  # noqa: E731
+    ),
 )
 
 
@@ -73,12 +82,6 @@ async def async_setup_entry(
                 for value in getattr(coordinator.data, description.refer, {})
             ]
             entities.extend(specs_entities)
-            # for value in getattr(coordinator.data, description.refer, {}):
-            #     entities.append(
-            #         description.func(
-            #             coordinator, description, value[description.reference]
-            #         )
-            #     )
         else:
             entities.append(description.func(coordinator, description))
 
@@ -176,4 +179,55 @@ class UpdateChart(TruenasEntity, UpdateEntity):
         """Install an update."""
         self._installing = True
         await self.coordinator.api.async_update_chart(id=self.data["id"])
+        await self.coordinator.async_refresh()
+
+
+class UpdateApp(TruenasEntity, UpdateEntity):
+    """Define an TrueNAS Update Sensor."""
+
+    _attr_supported_features = (
+        UpdateEntityFeature.INSTALL | UpdateEntityFeature.PROGRESS
+    )
+
+    def __init__(
+        self,
+        coordinator: TruenasDataUpdateCoordinator,
+        entity_description,
+        uid: str | None = None,
+    ) -> None:
+        """Set up device update entity."""
+        super().__init__(coordinator, entity_description, uid)
+        self._attr_title = uid.capitalize()
+        self._installing = False
+
+    @property
+    def installed_version(self) -> str | None:
+        """Version installed and in use."""
+        return self.data.get("human_version")
+
+    @property
+    def latest_version(self) -> str:
+        """Latest version available for install."""
+        if self.data.get("upgrade_available") or self.data.get(
+            "image_updates_available"
+        ):
+            return "New version"
+        return self.data.get("human_version")
+
+    @property
+    def release_summary(self) -> str | None:
+        """Return the release notes."""
+        return self.data.get("description")
+
+    @property
+    def in_progress(self) -> int:
+        """Update installation progress."""
+        if self.latest_version == self.installed_version:
+            self._installing = False
+        return self._installing
+
+    async def async_install(self, version: str, backup: bool, **kwargs: Any) -> None:
+        """Install an update."""
+        self._installing = True
+        await self.coordinator.api.async_update_app(app_name=self.data["id"])
         await self.coordinator.async_refresh()

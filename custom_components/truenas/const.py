@@ -1,4 +1,5 @@
 """Constants for this component."""
+
 from homeassistant.const import Platform
 
 CONF_NOTIFY = "notify"
@@ -50,6 +51,13 @@ SERVICE_APP_STOP = "app_stop"
 SCHEMA_SERVICE_APP_STOP = {}
 SERVICE_APP_UPDATE = "app_update"
 SCHEMA_SERVICE_APP_UPDATE = {}
+
+SERVICE_CHART_START = "chart_start"
+SCHEMA_SERVICE_CHART_START = {}
+SERVICE_CHART_STOP = "chart_stop"
+SCHEMA_SERVICE_CHART_STOP = {}
+SERVICE_CHART_UPDATE = "chart_update"
+SCHEMA_SERVICE_CHART_UPDATE = {}
 
 TO_REDACT = {
     "username",
@@ -201,6 +209,13 @@ EXTRA_ATTRS_CHART = [
     "name",
     "portal",
     "update_available",
+    "version",
+]
+EXTRA_ATTRS_APP = [
+    "state",
+    "human_version",
+    "upgrade_available",
+    "image_updates_available",
     "version",
 ]
 EXTRA_ATTRS_ALERT = []

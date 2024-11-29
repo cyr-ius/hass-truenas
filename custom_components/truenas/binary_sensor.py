@@ -20,6 +20,7 @@ from . import TruenasConfigEntry
 from .const import (
     CONF_NOTIFY,
     EXTRA_ATTRS_ALERT,
+    EXTRA_ATTRS_APP,
     EXTRA_ATTRS_CHART,
     EXTRA_ATTRS_JAIL,
     EXTRA_ATTRS_POOL,
@@ -29,6 +30,9 @@ from .const import (
     SCHEMA_SERVICE_APP_START,
     SCHEMA_SERVICE_APP_STOP,
     SCHEMA_SERVICE_APP_UPDATE,
+    SCHEMA_SERVICE_CHART_START,
+    SCHEMA_SERVICE_CHART_STOP,
+    SCHEMA_SERVICE_CHART_UPDATE,
     SCHEMA_SERVICE_JAIL_RESTART,
     SCHEMA_SERVICE_JAIL_START,
     SCHEMA_SERVICE_JAIL_STOP,
@@ -41,6 +45,9 @@ from .const import (
     SERVICE_APP_START,
     SERVICE_APP_STOP,
     SERVICE_APP_UPDATE,
+    SERVICE_CHART_START,
+    SERVICE_CHART_STOP,
+    SERVICE_CHART_UPDATE,
     SERVICE_JAIL_RESTART,
     SERVICE_JAIL_START,
     SERVICE_JAIL_STOP,
@@ -111,7 +118,7 @@ RESOURCE_LIST: Final[tuple[TruenasBinarySensorEntityDescription, ...]] = (
         icon_disabled="mdi:cog-off",
         category="Services",
         refer="services",
-        attr="running",
+        attr="enable",
         reference="service",
         extra_attributes=EXTRA_ATTRS_SERVICE,
         func=lambda *args: ServiceBinarySensor(  # pylint: disable=unnecessary-lambda
@@ -128,6 +135,19 @@ RESOURCE_LIST: Final[tuple[TruenasBinarySensorEntityDescription, ...]] = (
         reference="id",
         extra_attributes=EXTRA_ATTRS_CHART,
         func=lambda *args: ChartBinarySensor(  # pylint: disable=unnecessary-lambda
+            *args
+        ),
+    ),
+    TruenasBinarySensorEntityDescription(
+        key="container",
+        icon_enabled="mdi:server",
+        icon_disabled="mdi:server-off",
+        category="Apps",
+        refer="apps",
+        attr="state",
+        reference="id",
+        extra_attributes=EXTRA_ATTRS_APP,
+        func=lambda *args: AppBinarySensor(  # pylint: disable=unnecessary-lambda
             *args
         ),
     ),
@@ -150,7 +170,7 @@ RESOURCE_LIST: Final[tuple[TruenasBinarySensorEntityDescription, ...]] = (
         name="Smartdisk alert",
         category="Disk",
         refer="smartdisks",
-        attr="status",
+        attr="tests",
         reference="name",
         extra_attributes=EXTRA_ATTRS_SMARTDISK,
         func=lambda *args: BinarySensor(*args),  # pylint: disable=unnecessary-lambda
@@ -167,6 +187,9 @@ SERVICES = [
     [SERVICE_SERVICE_STOP, SCHEMA_SERVICE_SERVICE_STOP, "stop"],
     [SERVICE_SERVICE_RESTART, SCHEMA_SERVICE_SERVICE_RESTART, "restart"],
     [SERVICE_SERVICE_RELOAD, SCHEMA_SERVICE_SERVICE_RELOAD, "reload"],
+    [SERVICE_CHART_START, SCHEMA_SERVICE_CHART_START, "start"],
+    [SERVICE_CHART_STOP, SCHEMA_SERVICE_CHART_STOP, "stop"],
+    [SERVICE_CHART_UPDATE, SCHEMA_SERVICE_CHART_UPDATE, "upgrade"],
     [SERVICE_APP_START, SCHEMA_SERVICE_APP_START, "start"],
     [SERVICE_APP_STOP, SCHEMA_SERVICE_APP_STOP, "stop"],
     [SERVICE_APP_UPDATE, SCHEMA_SERVICE_APP_UPDATE, "upgrade"],
@@ -469,3 +492,42 @@ class AlertBinarySensor(BinarySensor):
                 if alert["level"] != "INFO"
             }
         }
+
+
+class AppBinarySensor(BinarySensor):
+    """Define a Truenas Applications Binary Sensor."""
+
+    async def start(self):
+        """Start a chart."""
+        tmp_vm = await self.coordinator.api.async_get_apps()[self.data["id"]]
+
+        if "state" not in tmp_vm:
+            _LOGGER.error("VM %s (%s) invalid", self.data["name"], self.data["id"])
+            return
+
+        await self.coordinator.api.async_start_app(app_name=self.data["id"])
+
+    async def stop(self):
+        """Stop a chart."""
+        tmp_vm = await self.coordinator.api.async_get_apps()[self.data["id"]]
+
+        if "status" not in tmp_vm:
+            _LOGGER.error("VM %s (%s) invalid", self.data["name"], self.data["id"])
+            return
+
+        await self.coordinator.api.async_stop_app(app_name=self.data["id"])
+
+    async def upgrade(self):
+        """Update a chart."""
+        tmp_vm = await self.coordinator.api.async_get_apps()[self.data["id"]]
+
+        if "state" not in tmp_vm:
+            _LOGGER.error("VM %s (%s) invalid", self.data["name"], self.data["id"])
+            return
+
+        if tmp_vm.get("images_update_available") is True:
+            repo = tmp_vm.get("config", {}).get("image", {}).get("repository")
+            tag = tmp_vm.get("config", {}).get("image", {}).get("tag")
+            await self.coordinator.api.async_update_chart_image(repo=repo, tag=tag)
+        else:
+            await self.coordinator.api.async_update_chart(id=self.data["id"])
