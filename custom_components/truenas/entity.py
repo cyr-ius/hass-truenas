@@ -84,7 +84,6 @@ class TruenasEntity(CoordinatorEntity[TruenasDataUpdateCoordinator], Entity):
             for data in self.data:
                 if data[reference] == self.uid:
                     self.data = data
-        self.async_write_ha_state()
         super()._handle_coordinator_update()
 
     @property
