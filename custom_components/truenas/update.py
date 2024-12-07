@@ -208,9 +208,7 @@ class UpdateApp(TruenasEntity, UpdateEntity):
     @property
     def latest_version(self) -> str:
         """Latest version available for install."""
-        if self.data.get("upgrade_available") or self.data.get(
-            "image_updates_available"
-        ):
+        if self.data.get("upgrade_available"):
             return "New version"
         return self.data.get("human_version")
 
