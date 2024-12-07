@@ -235,8 +235,7 @@ class BinarySensor(TruenasEntity, BinarySensorEntity):
         if self.entity_description.icon_enabled:
             if self.is_on:
                 return self.entity_description.icon_enabled
-            else:
-                return self.entity_description.icon_disabled
+            return self.entity_description.icon_disabled
 
 
 class JailBinarySensor(BinarySensor):
@@ -470,7 +469,7 @@ class AlertBinarySensor(BinarySensor):
         """Return true if device is on."""
         status = False
         for alert in self.data:
-            if alert.get(self.entity_description.attr) != "INFO":
+            if getattr(alert, self.entity_description.attr) != "INFO":
                 if self.coordinator.config_entry.options.get(CONF_NOTIFY):
                     persistent_notification.create(
                         self.hass,
@@ -489,7 +488,7 @@ class AlertBinarySensor(BinarySensor):
             "msg": {
                 alert["uuid"]: alert["formatted"]
                 for alert in self.data
-                if alert["level"] != "INFO"
+                if getattr(alert, self.entity_description.attr) != "INFO"
             }
         }
 
