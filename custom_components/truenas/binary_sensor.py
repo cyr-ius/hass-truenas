@@ -473,9 +473,9 @@ class AlertBinarySensor(BinarySensor):
                 if self.coordinator.config_entry.options.get(CONF_NOTIFY):
                     persistent_notification.create(
                         self.hass,
-                        alert["formatted"],
-                        title=f"{alert['level']} {alert['klass']}",
-                        notification_id=alert["uuid"],
+                        alert.formatted,
+                        title=f"{alert.level} {alert.klass}",
+                        notification_id=alert.uuid,
                     )
                 status = True
 
@@ -486,7 +486,7 @@ class AlertBinarySensor(BinarySensor):
         """Return extra attributes."""
         return {
             "msg": {
-                alert["uuid"]: alert["formatted"]
+                alert.uuid: alert.formatted
                 for alert in self.data
                 if getattr(alert, self.entity_description.attr) != "INFO"
             }
