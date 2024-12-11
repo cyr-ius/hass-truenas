@@ -47,9 +47,9 @@ class TruenasFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
     @staticmethod
     @callback
-    def async_get_options_flow(config_entry):
+    def async_get_options_flow(config_entry: config_entries.ConfigEntry):
         """Get option flow."""
-        return TruenasOptionsFlowHandler(config_entry)
+        return TruenasOptionsFlowHandler()
 
     async def async_step_import(
         self, user_input: dict[str, Any] | None = None
@@ -95,9 +95,8 @@ class TruenasFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 class TruenasOptionsFlowHandler(config_entries.OptionsFlow):
     """Handle option."""
 
-    def __init__(self, config_entry) -> None:
+    def __init__(self) -> None:
         """Initialize the options flow."""
-        self.config_entry = config_entry
         self._notify = self.config_entry.options.get(CONF_NOTIFY, False)
 
     async def async_step_init(self, user_input=None):
