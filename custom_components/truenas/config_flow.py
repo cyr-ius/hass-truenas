@@ -95,16 +95,17 @@ class TruenasFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 class TruenasOptionsFlowHandler(config_entries.OptionsFlow):
     """Handle option."""
 
-    def __init__(self) -> None:
-        """Initialize the options flow."""
-        self._notify = self.config_entry.options.get(CONF_NOTIFY, False)
-
     async def async_step_init(self, user_input=None):
         """Handle a flow initialized by the user."""
-        options_schema = vol.Schema(
-            {vol.Required(CONF_NOTIFY, default=False): bool},
-        )
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
 
-        return self.async_show_form(step_id="init", data_schema=options_schema)
+        return self.async_show_form(
+            step_id="init",
+            data_schema=self.add_suggested_values_to_schema(
+                vol.Schema(
+                    {vol.Required(CONF_NOTIFY, default=False): bool},
+                ),
+                self.config_entry.options,
+            ),
+        )
