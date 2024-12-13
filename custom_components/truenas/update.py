@@ -210,6 +210,8 @@ class UpdateApp(TruenasEntity, UpdateEntity):
         """Latest version available for install."""
         if self.data.get("upgrade_available"):
             return "New version"
+        if self.data.get("image_updates_available"):
+            return "New image available"
         return self.data.get("human_version")
 
     @property
@@ -218,7 +220,7 @@ class UpdateApp(TruenasEntity, UpdateEntity):
         return self.data.get("description")
 
     @property
-    def in_progress(self) -> int:
+    def in_progress(self) -> bool:
         """Update installation progress."""
         if self.latest_version == self.installed_version:
             self._installing = False
@@ -227,5 +229,8 @@ class UpdateApp(TruenasEntity, UpdateEntity):
     async def async_install(self, version: str, backup: bool, **kwargs: Any) -> None:
         """Install an update."""
         self._installing = True
-        await self.coordinator.api.async_update_app(app_name=self.data["id"])
+        if self.data.get("upgrade_available"):
+            await self.coordinator.api.async_update_app(app_name=self.data["id"])
+        if self.data.get("image_updates_available"):
+            await self.coordinator.api.async_pull_images(app_name=self.data["id"])
         await self.coordinator.async_refresh()
