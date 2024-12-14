@@ -5,14 +5,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from truenaspy import (
-    AuthenticationFailed,
-    ConnectionError,
-    TruenasClient,
-    TruenasException,
-)
 import voluptuous as vol
-
 from homeassistant import config_entries
 from homeassistant.const import (
     CONF_API_KEY,
@@ -24,6 +17,12 @@ from homeassistant.const import (
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
+from truenaspy import (
+    AuthenticationFailed,
+    ConnectionError,
+    TruenasClient,
+    TruenasException,
+)
 
 from .const import CONF_NOTIFY, DOMAIN
 
@@ -97,7 +96,7 @@ class TruenasOptionsFlowHandler(config_entries.OptionsFlow):
 
     async def async_step_init(self, user_input=None):
         """Handle a flow initialized by the user."""
-        if user_input is not None:
+        if user_input:
             return self.async_create_entry(title="", data=user_input)
 
         return self.async_show_form(
