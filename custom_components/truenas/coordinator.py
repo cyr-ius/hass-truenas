@@ -28,12 +28,15 @@ class TruenasDataUpdateCoordinator(DataUpdateCoordinator):
         super().__init__(
             hass, _LOGGER, name=DOMAIN, update_interval=timedelta(seconds=SCAN_INTERVAL)
         )
+
+    async def _async_setup(self) -> None:
+        """Start Truenas connection."""
         self.api = TruenasClient(
-            entry.data[CONF_HOST],
-            entry.data[CONF_API_KEY],
-            async_create_clientsession(hass),
-            entry.data[CONF_SSL],
-            entry.data[CONF_VERIFY_SSL],
+            self.config_entry.data[CONF_HOST],
+            self.config_entry.data[CONF_API_KEY],
+            async_create_clientsession(self.hass),
+            self.config_entry.data[CONF_SSL],
+            self.config_entry.data[CONF_VERIFY_SSL],
         )
 
     async def _async_update_data(self) -> dict:

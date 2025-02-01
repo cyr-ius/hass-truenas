@@ -1,30 +1,38 @@
 """Helpers functions."""
+
 from __future__ import annotations
 
-from functools import reduce
 from typing import Any
-
-
-class ExtendedDict(dict[Any, Any]):
-    """Extend dictionary class."""
-
-    def getr(self, keys: str, default: Any = None) -> Any:
-        """Get recursive attribute."""
-        reduce_value: Any = reduce(
-            lambda d, key: d.get(key, default) if isinstance(d, dict) else default,
-            keys.split("."),
-            self,
-        )
-        if isinstance(reduce_value, dict):
-            return ExtendedDict(reduce_value)
-        return reduce_value
 
 
 def format_attribute(attr: str) -> str:
     """Format attribute."""
-    res = attr.replace("_", " ").replace("-", " ").capitalize()
-    res = res.replace("zfs", "ZFS").replace(" gib", " GiB")
-    res = res.replace("Cpu ", "CPU ").replace("Vcpu ", "vCPU ")
-    res = res.replace("Vmware ", "VMware ")
-    res = res.replace("Ip4 ", "IP4 ").replace("Ip6 ", "IP6 ")
-    return res
+    attr = attr.replace("_", " ").replace("-", " ").capitalize()
+    attr = attr.replace("zfs", "ZFS").replace(" gib", " GiB")
+    attr = attr.replace("Cpu ", "CPU ").replace("Vcpu ", "vCPU ")
+    attr = attr.replace("Vmware ", "VMware ")
+    return attr.replace("Ip4 ", "IP4 ").replace("Ip6 ", "IP6 ")
+
+
+def finditem(data: dict[str, Any], key_chain: str, default: Any = None) -> Any:
+    """Get recursive key and return value.
+
+    data is a mandatory dictonnary
+    key , string with dot for key delimited (ex: "key.key.key")
+
+    It is possible to integrate an element of an array by indicating its index number
+    {"a":{"b":[{"c":"value"}]}
+    key = a.b.0.c
+    """
+    if (keys := key_chain.split(".")) and isinstance(keys, list):
+        for key in keys:
+            if isinstance(data, dict):
+                data = data.get(key)
+            elif (
+                isinstance(data, list)
+                and len(data) > 0
+                and key.isdigit()
+                and int(key) < len(data)
+            ):
+                data = data[int(key)]
+    return default if data is None and default is not None else data

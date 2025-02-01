@@ -1,7 +1,8 @@
-"""Truenas binary sensor platform."""
+"""Sensors for TrueNAS integration."""
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from decimal import Decimal
@@ -22,7 +23,6 @@ from homeassistant.const import (
     UnitOfTemperature,
 )
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import entity_platform
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import StateType
 
@@ -37,14 +37,6 @@ from .const import (
     EXTRA_ATTRS_POOL,
     EXTRA_ATTRS_REPLICATION,
     EXTRA_ATTRS_SNAPSHOTTASK,
-    SCHEMA_SERVICE_CLOUDSYNC_RUN,
-    SCHEMA_SERVICE_DATASET_SNAPSHOT,
-    SCHEMA_SERVICE_SYSTEM_REBOOT,
-    SCHEMA_SERVICE_SYSTEM_SHUTDOWN,
-    SERVICE_CLOUDSYNC_RUN,
-    SERVICE_DATASET_SNAPSHOT,
-    SERVICE_SYSTEM_REBOOT,
-    SERVICE_SYSTEM_SHUTDOWN,
 )
 from .entity import TruenasEntity
 
@@ -55,13 +47,12 @@ _LOGGER = getLogger(__name__)
 class TruenasSensorEntityDescription(SensorEntityDescription):
     """Class describing entities."""
 
-    sensor_class: TruenasEntity | None = None
-    category: str | None = None
-    refer: str | None = None
+    device: str | None = None
+    api: str | None = None
     attr: str | None = None
     extra_attributes: list[str] = field(default_factory=list)
-    reference: str | None = None
-    func: str = lambda *args: Sensor(*args)  # noqa: E731
+    id: str | None = None
+    value_fn: Callable | None = None
 
 
 RESOURCE_LIST: Final[tuple[TruenasSensorEntityDescription, ...]] = (
@@ -71,10 +62,10 @@ RESOURCE_LIST: Final[tuple[TruenasSensorEntityDescription, ...]] = (
         icon="mdi:clock-outline",
         device_class=SensorDeviceClass.TIMESTAMP,
         entity_category=EntityCategory.DIAGNOSTIC,
-        category="System",
-        refer="system_infos",
+        device="System",
+        api="system_infos",
         attr="uptimeEpoch",
-        func=lambda *args: UptimeSensor(*args),  # noqa: E731
+        value_fn=lambda x: datetime.strptime(x, "%Y-%m-%dT%H:%M:%S%z"),
     ),
     TruenasSensorEntityDescription(
         key="system_cpu_temperature",
@@ -84,8 +75,8 @@ RESOURCE_LIST: Final[tuple[TruenasSensorEntityDescription, ...]] = (
         device_class=SensorDeviceClass.TEMPERATURE,
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
-        category="System",
-        refer="system_infos",
+        device="System",
+        api="system_infos",
         attr="cpu_temperature",
     ),
     TruenasSensorEntityDescription(
@@ -94,8 +85,8 @@ RESOURCE_LIST: Final[tuple[TruenasSensorEntityDescription, ...]] = (
         icon="mdi:gauge",
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
-        category="System",
-        refer="system_infos",
+        device="System",
+        api="system_infos",
         attr="load_shortterm",
     ),
     TruenasSensorEntityDescription(
@@ -104,8 +95,8 @@ RESOURCE_LIST: Final[tuple[TruenasSensorEntityDescription, ...]] = (
         icon="mdi:gauge",
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
-        category="System",
-        refer="system_infos",
+        device="System",
+        api="system_infos",
         attr="load_midterm",
     ),
     TruenasSensorEntityDescription(
@@ -114,8 +105,8 @@ RESOURCE_LIST: Final[tuple[TruenasSensorEntityDescription, ...]] = (
         icon="mdi:gauge",
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
-        category="System",
-        refer="system_infos",
+        device="System",
+        api="system_infos",
         attr="load_longterm",
     ),
     TruenasSensorEntityDescription(
@@ -125,8 +116,8 @@ RESOURCE_LIST: Final[tuple[TruenasSensorEntityDescription, ...]] = (
         native_unit_of_measurement=PERCENTAGE,
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
-        category="System",
-        refer="system_infos",
+        device="System",
+        api="system_infos",
         attr="cpu_usage",
         extra_attributes=EXTRA_ATTRS_CPU,
     ),
@@ -137,8 +128,8 @@ RESOURCE_LIST: Final[tuple[TruenasSensorEntityDescription, ...]] = (
         native_unit_of_measurement=PERCENTAGE,
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
-        category="System",
-        refer="system_infos",
+        device="System",
+        api="system_infos",
         attr="memory_usage_percent",
         extra_attributes=EXTRA_ATTRS_MEMORY,
     ),
@@ -149,8 +140,8 @@ RESOURCE_LIST: Final[tuple[TruenasSensorEntityDescription, ...]] = (
         native_unit_of_measurement=UnitOfInformation.GIBIBYTES,
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
-        category="System",
-        refer="system_infos",
+        device="System",
+        api="system_infos",
         attr="memory_arc_size",
     ),
     TruenasSensorEntityDescription(
@@ -160,8 +151,8 @@ RESOURCE_LIST: Final[tuple[TruenasSensorEntityDescription, ...]] = (
         native_unit_of_measurement=UnitOfInformation.GIBIBYTES,
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
-        category="System",
-        refer="system_infos",
+        device="System",
+        api="system_infos",
         attr="memory_arc_size",
     ),
     TruenasSensorEntityDescription(
@@ -171,8 +162,8 @@ RESOURCE_LIST: Final[tuple[TruenasSensorEntityDescription, ...]] = (
         native_unit_of_measurement=PERCENTAGE,
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
-        category="System",
-        refer="system_infos",
+        device="System",
+        api="system_infos",
         attr="arc_size_ratio",
     ),
     TruenasSensorEntityDescription(
@@ -181,8 +172,8 @@ RESOURCE_LIST: Final[tuple[TruenasSensorEntityDescription, ...]] = (
         icon="mdi:aspect-ratio",
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
-        category="System",
-        refer="system_infos",
+        device="System",
+        api="system_infos",
         attr="cache_ratio-L2_value",
     ),
     TruenasSensorEntityDescription(
@@ -191,11 +182,11 @@ RESOURCE_LIST: Final[tuple[TruenasSensorEntityDescription, ...]] = (
         icon="mdi:database-settings",
         native_unit_of_measurement=UnitOfInformation.GIBIBYTES,
         state_class=SensorStateClass.MEASUREMENT,
-        category="Pool",
-        refer="pools",
+        device="Pool",
+        api="pools",
         attr="available_gib",
         extra_attributes=EXTRA_ATTRS_POOL,
-        reference="name",
+        id="name",
     ),
     TruenasSensorEntityDescription(
         key="traffic_rx",
@@ -203,11 +194,11 @@ RESOURCE_LIST: Final[tuple[TruenasSensorEntityDescription, ...]] = (
         icon="mdi:download-network-outline",
         native_unit_of_measurement=UnitOfDataRate.KIBIBYTES_PER_SECOND,
         state_class=SensorStateClass.MEASUREMENT,
-        category="System",
-        refer="interfaces",
+        device="System",
+        api="interfaces",
         attr="received",
         extra_attributes=EXTRA_ATTRS_NETWORK,
-        reference="id",
+        id="id",
     ),
     TruenasSensorEntityDescription(
         key="traffic_tx",
@@ -215,23 +206,23 @@ RESOURCE_LIST: Final[tuple[TruenasSensorEntityDescription, ...]] = (
         icon="mdi:upload-network-outline",
         native_unit_of_measurement=UnitOfDataRate.KIBIBYTES_PER_SECOND,
         state_class=SensorStateClass.MEASUREMENT,
-        category="System",
-        refer="interfaces",
+        device="System",
+        api="interfaces",
         attr="sent",
         extra_attributes=EXTRA_ATTRS_NETWORK,
-        reference="id",
+        id="id",
     ),
     TruenasSensorEntityDescription(
         key="dataset",
         icon="mdi:database",
         native_unit_of_measurement=UnitOfInformation.GIBIBYTES,
         state_class=SensorStateClass.MEASUREMENT,
-        category="Datasets",
-        refer="datasets",
+        device="Datasets",
+        api="datasets",
         attr="used_gb",
         extra_attributes=EXTRA_ATTRS_DATASET,
-        reference="id",
-        func=lambda *args: DatasetSensor(*args),  # pylint: disable=unnecessary-lambda
+        id="id",
+        device_class="datasets",
     ),
     TruenasSensorEntityDescription(
         key="disk",
@@ -239,48 +230,41 @@ RESOURCE_LIST: Final[tuple[TruenasSensorEntityDescription, ...]] = (
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         device_class=SensorDeviceClass.TEMPERATURE,
         state_class=SensorStateClass.MEASUREMENT,
-        category="Disk",
-        refer="disks",
+        device="Disk",
+        api="disks",
         attr="temperature",
         extra_attributes=EXTRA_ATTRS_DISK,
-        reference="devname",
+        id="devname",
     ),
     TruenasSensorEntityDescription(
         key="cloudsync",
         icon="mdi:cloud-upload",
-        category="CloudSync",
-        refer="cloudsync",
+        device="CloudSync",
+        api="cloudsync",
         attr="state",
         extra_attributes=EXTRA_ATTRS_CLOUDSYNC,
-        reference="id",
-        func=lambda *args: ClousyncSensor(*args),  # pylint: disable=unnecessary-lambda
+        id="id",
+        device_class="cloudsync",
     ),
     TruenasSensorEntityDescription(
         key="replication",
         icon="mdi:transfer",
-        category="Replication",
-        refer="replications",
+        device="Replication",
+        api="replications",
         attr="state",
         extra_attributes=EXTRA_ATTRS_REPLICATION,
-        reference="id",
+        id="id",
     ),
     TruenasSensorEntityDescription(
         key="snapshottask",
         icon="mdi:checkbox-marked-circle-plus-outline",
-        category="SnapshotTask",
-        refer="snapshottasks",
+        device="SnapshotTask",
+        api="snapshottasks",
         attr="state",
         extra_attributes=EXTRA_ATTRS_SNAPSHOTTASK,
-        reference="id",
+        id="id",
     ),
 )
-
-SERVICES = [
-    [SERVICE_CLOUDSYNC_RUN, SCHEMA_SERVICE_CLOUDSYNC_RUN, "start"],
-    [SERVICE_DATASET_SNAPSHOT, SCHEMA_SERVICE_DATASET_SNAPSHOT, "snapshot"],
-    [SERVICE_SYSTEM_REBOOT, SCHEMA_SERVICE_SYSTEM_REBOOT, "restart"],
-    [SERVICE_SYSTEM_SHUTDOWN, SCHEMA_SERVICE_SYSTEM_SHUTDOWN, "stop"],
-]
 
 
 async def async_setup_entry(
@@ -290,81 +274,26 @@ async def async_setup_entry(
 ) -> None:
     """Set up the platform."""
     coordinator = entry.runtime_data
-    platform = entity_platform.async_get_current_platform()
-    for service in SERVICES:
-        platform.async_register_entity_service(*service)
-
     entities = []
     for description in RESOURCE_LIST:
-        if description.reference:
-            for value in getattr(coordinator.data, description.refer, {}):
-                entities.append(
-                    description.func(
-                        coordinator, description, value[description.reference]
-                    )
+        if description.id:
+            for value in getattr(coordinator.data, description.api, {}):
+                entities.extend(
+                    [Sensor(coordinator, description, value[description.id])]
                 )
         else:
-            entities.append(description.func(coordinator, description))
+            entities.append(Sensor(coordinator, description))
 
     async_add_entities(entities, update_before_add=True)
 
 
 class Sensor(TruenasEntity, SensorEntity):
-    """Generic sensor."""
+    """Define an Truenas Sensor."""
 
     @property
     def native_value(self) -> StateType | date | datetime | Decimal:
         """Return the value reported by the sensor."""
-        return self.data.get(self.entity_description.attr)
-
-
-class UptimeSensor(Sensor):
-    """Define an Truenas Uptime sensor."""
-
-    @property
-    def native_value(self) -> StateType | date | datetime | Decimal:
-        """Return the value reported by the sensor."""
-        return datetime.strptime(
-            self.data.get(self.entity_description.attr), "%Y-%m-%dT%H:%M:%S%z"
-        )
-
-    async def restart(self) -> None:
-        """Restart TrueNAS system."""
-        await self.coordinator.api.async_restart_system()
-
-    async def stop(self) -> None:
-        """Shutdown TrueNAS system."""
-        await self.coordinator.api.async_shutdown_system()
-
-
-class DatasetSensor(Sensor):
-    """Define an Truenas Dataset sensor."""
-
-    async def snapshot(self) -> None:
-        """Create dataset snapshot."""
-        await self.coordinator.api.async_take_snapshot(name=self.ref["name"])
-
-
-class ClousyncSensor(Sensor):
-    """Define an Truenas Cloudsync sensor."""
-
-    async def start(self) -> None:
-        """Run cloudsync job."""
-        tmp_job = await self.coordinator.api.async_get_cloudsync(id=self.ref["id"])
-
-        if "job" not in tmp_job:
-            _LOGGER.error(
-                "Clousync job %s (%s) invalid",
-                self.ref["description"],
-                self.ref["id"],
-            )
-            return
-        if tmp_job["job"]["state"] in ["WAITING", "RUNNING"]:
-            _LOGGER.warning(
-                "Clousync job %s (%s) is already running",
-                self.ref["description"],
-                self.ref["id"],
-            )
-            return
-
-        await self.coordinator.api.async_sync_cloudsync(id=self.ref["id"])
+        value = self.device_data.get(self.entity_description.attr)
+        if self.entity_description.value_fn:
+            return self.entity_description.value_fn(value)
+        return value

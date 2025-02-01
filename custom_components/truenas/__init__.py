@@ -2,18 +2,15 @@
 
 from __future__ import annotations
 
-import logging
-
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceEntry
 
 from .const import PLATFORMS
 from .coordinator import TruenasDataUpdateCoordinator
+from .service import async_setup_services
 
 type TruenasConfigEntry = ConfigEntry[TruenasDataUpdateCoordinator]
-
-_LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: TruenasConfigEntry) -> bool:
@@ -23,6 +20,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: TruenasConfigEntry) -> b
     entry.runtime_data = coordinator
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    await async_setup_services(hass, coordinator)
+    entry.async_on_unload(entry.add_update_listener(_async_update_listener))
 
     return True
 
