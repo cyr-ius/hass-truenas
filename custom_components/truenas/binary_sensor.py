@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Final
 
 from homeassistant.components import persistent_notification
 from homeassistant.components.binary_sensor import (
+    BinarySensorDeviceClass,
     BinarySensorEntity,
     BinarySensorEntityDescription,
 )
@@ -14,21 +15,25 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import TruenasConfigEntry
-from .const import CONF_NOTIFY, EXTRA_ATTRS_POOL, EXTRA_ATTRS_SMARTDISK
-from .entity import TruenasDataUpdateCoordinator, TruenasEntity
+from .const import (
+    CONF_NOTIFY,
+    EXTRA_ATTRS_NETWORK,
+    EXTRA_ATTRS_POOL,
+    EXTRA_ATTRS_SMARTDISK,
+)
+from .entity import TruenasEntity, TruenasEntityDescription
+from .helpers import finditem
 
 
-@dataclass
-class TruenasBinarySensorEntityDescription(BinarySensorEntityDescription):
+@dataclass(frozen=True, kw_only=True)
+class TruenasBinarySensorEntityDescription(
+    BinarySensorEntityDescription, TruenasEntityDescription
+):
     """Class describing entities."""
 
     icon_disabled: str | None = None
     icon_enabled: str | None = None
-    device: str | None = None
-    api: str | None = None
-    attr: str | None = None
-    extra_attributes: list[str] = field(default_factory=list)
-    id: str | None = None
+    cls: str = lambda *args: BinarySensor(*args)  # pylint: disable=W0108
 
 
 RESOURCE_LIST: Final[tuple[TruenasBinarySensorEntityDescription, ...]] = (
@@ -38,9 +43,10 @@ RESOURCE_LIST: Final[tuple[TruenasBinarySensorEntityDescription, ...]] = (
         icon_disabled="mdi:database-off",
         device="Pool",
         api="pools",
-        attr="healthy",
+        attribute="status",
         id="name",
         extra_attributes=EXTRA_ATTRS_POOL,
+        value_fn=lambda x: x == "ONLINE",
     ),
     TruenasBinarySensorEntityDescription(
         key="smartdisks",
@@ -49,19 +55,31 @@ RESOURCE_LIST: Final[tuple[TruenasBinarySensorEntityDescription, ...]] = (
         name="Smartdisk alert",
         device="Disk",
         api="smartdisks",
-        attr="tests",
+        attribute="tests.0.status",
         id="name",
         extra_attributes=EXTRA_ATTRS_SMARTDISK,
+        value_fn=lambda x: x != "SUCCESS",
     ),
-)
-
-ALERT = TruenasBinarySensorEntityDescription(
-    key="alerts",
-    name="Alert",
-    icon_enabled="mdi:bell",
-    icon_disabled="mdi:bell-off",
-    device="System",
-    api="alerts",
+    TruenasBinarySensorEntityDescription(
+        key="network_card",
+        device_class=BinarySensorDeviceClass.CONNECTIVITY,
+        device="System",
+        api="interfaces",
+        id="id",
+        attribute="state.link_state",
+        extra_attributes=EXTRA_ATTRS_NETWORK,
+        value_fn=lambda x: x == "LINK_STATE_UP",
+    ),
+    TruenasBinarySensorEntityDescription(
+        key="alerts",
+        name="Alert",
+        icon_enabled="mdi:bell",
+        icon_disabled="mdi:bell-off",
+        device="System",
+        api="events",
+        attribute="alert_list",
+        cls=lambda *args: AlertBinarySensor(*args),  # pylint: disable=W0108
+    ),
 )
 
 
@@ -75,32 +93,22 @@ async def async_setup_entry(
 
     entities = []
     for description in RESOURCE_LIST:
-        for value in getattr(coordinator.data, description.api, {}):
-            entities.extend(
-                [BinarySensor(coordinator, description, value[description.id])]
-            )
-
-    entities.append(AlertBinarySensor(coordinator, ALERT))
-
-    async_add_entities(entities, update_before_add=True)
+        for value in coordinator.data.get(description.api, {}):
+            uid = value[description.id] if description.id else None
+            entities.extend([description.cls(coordinator, description, uid)])
+    async_add_entities(entities)
 
 
 class BinarySensor(TruenasEntity, BinarySensorEntity):
     """Define an Truenas Binary Sensor."""
 
-    def __init__(
-        self,
-        coordinator: TruenasDataUpdateCoordinator,
-        description,
-        id: str | None = None,
-    ) -> None:
-        """Initialize switch."""
-        super().__init__(coordinator, description, id)
-
     @property
     def is_on(self) -> bool:
         """Return true if device is on."""
-        return bool(self.device_data.get(self.entity_description.attr))
+        value = finditem(self.device_data, self.entity_description.attribute)
+        if self.entity_description.value_fn:
+            return bool(self.entity_description.value_fn(value))
+        return bool(value)
 
     @property
     def icon(self) -> str:
@@ -113,15 +121,12 @@ class BinarySensor(TruenasEntity, BinarySensorEntity):
 class AlertBinarySensor(BinarySensor):
     """Define a Truenas Alert Binary Sensor."""
 
-    def __init__(self, coordinator: TruenasDataUpdateCoordinator, description) -> None:
-        """Initialize switch."""
-        super().__init__(coordinator, description)
-
     @property
     def is_on(self) -> bool:
         """Return true if device is on."""
+        alerts = finditem(self.device_data, self.entity_description.attribute, [])
         if self.coordinator.config_entry.options.get(CONF_NOTIFY):
-            for alert in self.device_data:
+            for alert in alerts:
                 if (level := alert["level"]) != "INFO":
                     persistent_notification.create(
                         self.hass,
@@ -130,4 +135,4 @@ class AlertBinarySensor(BinarySensor):
                         notification_id=alert["uuid"],
                     )
 
-        return len(self.device_data) != 0
+        return len(alerts) != 0

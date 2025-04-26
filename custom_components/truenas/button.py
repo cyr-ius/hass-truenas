@@ -2,29 +2,25 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 import logging
-from collections.abc import Callable
-from dataclasses import dataclass, field
 from typing import Final
+
+from truenaspy import TruenasException
 
 from homeassistant.components.button import ButtonEntity, ButtonEntityDescription
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from truenaspy import TruenasException
 
-from . import TruenasConfigEntry, TruenasDataUpdateCoordinator
-from .entity import TruenasEntity
+from . import TruenasConfigEntry
+from .entity import TruenasEntity, TruenasEntityDescription
 
 
-@dataclass(frozen=True)
-class TruenasButtonEntityDescription(ButtonEntityDescription):
+@dataclass(frozen=True, kw_only=True)
+class TruenasButtonEntityDescription(ButtonEntityDescription, TruenasEntityDescription):
     """Class describing entities."""
 
-    device: str | None = None
-    api: str | None = None
-    id: str | None = None
-    extra_attributes: list[str] = field(default_factory=list)
-    func: Callable | None = None
+    fn: str | None = None
 
 
 BUTTON_LIST: Final[tuple[TruenasButtonEntityDescription, ...]] = (
@@ -32,7 +28,7 @@ BUTTON_LIST: Final[tuple[TruenasButtonEntityDescription, ...]] = (
         key="restart",
         name="Restart",
         icon="mdi:restart-alert",
-        func="async_restart_system",
+        fn="system.reboot.info",
         device="System",
         api="system_infos",
     ),
@@ -40,7 +36,7 @@ BUTTON_LIST: Final[tuple[TruenasButtonEntityDescription, ...]] = (
         key="stop",
         name="Stop",
         icon="mdi:stop",
-        func="async_shutdown_system",
+        fn="system.shutdown",
         device="System",
         api="system_infos",
     ),
@@ -56,25 +52,18 @@ async def async_setup_entry(
 ) -> None:
     """Set up sensor."""
     coordinator = entry.runtime_data
-    entities = [Button(coordinator, description) for description in BUTTON_LIST]
+    entities = [ButtonSensor(coordinator, description) for description in BUTTON_LIST]
     async_add_entities(entities)
 
 
-class Button(TruenasEntity, ButtonEntity):
+class ButtonSensor(TruenasEntity, ButtonEntity):
     """Representation of a button for TrueNAS."""
-
-    def __init__(
-        self,
-        coordinator: TruenasDataUpdateCoordinator,
-        description,
-        id: str | None = None,
-    ) -> None:
-        """Initialize switch."""
-        super().__init__(coordinator, description)
 
     async def async_press(self) -> None:
         """Handle the button press."""
         try:
-            await getattr(self.coordinator.api, self.description.func)()
+            await self.coordinator.ws.async_call(method=self.entity_description.fn)
         except TruenasException as error:
             _LOGGER.error(error)
+        else:
+            await self.coordinator.async_refresh()

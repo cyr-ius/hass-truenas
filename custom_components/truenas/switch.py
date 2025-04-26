@@ -2,38 +2,31 @@
 
 from __future__ import annotations
 
-import logging
 from collections.abc import Callable
-from dataclasses import dataclass, field
-from typing import Final
+from dataclasses import dataclass
+import logging
+from typing import Any, Final
+
+from truenaspy import TruenasException
 
 from homeassistant.components.switch import SwitchEntity, SwitchEntityDescription
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from truenaspy import TruenasException
 
-from . import TruenasConfigEntry, TruenasDataUpdateCoordinator
-from .const import (
-    EXTRA_ATTRS_CHART,
-    EXTRA_ATTRS_JAIL,
-    EXTRA_ATTRS_SERVICE,
-    EXTRA_ATTRS_VM,
-)
-from .entity import TruenasEntity
+from . import TruenasConfigEntry
+from .const import EXTRA_ATTRS_SERVICE, EXTRA_ATTRS_VM
+from .entity import TruenasEntity, TruenasEntityDescription
+from .helpers import finditem
 
 
-@dataclass
-class TruenasSwitchEntityDescription(SwitchEntityDescription):
+@dataclass(frozen=True, kw_only=True)
+class TruenasSwitchEntityDescription(SwitchEntityDescription, TruenasEntityDescription):
     """Class describing mikrotik entities."""
 
-    device: str | None = None
-    api: str | None = None
-    attr: str | None = None
-    extra_attributes: list[str] = field(default_factory=list)
-    id: str | None = None
     turn_on: Callable | None = None
     turn_off: Callable | None = None
-    value_fn: Callable | None = None
+    params_on: dict[str, Any] | None = None
+    params_off: dict[str, Any] | None = None
 
 
 SWITCH_LIST: Final[tuple[TruenasSwitchEntityDescription, ...]] = (
@@ -41,53 +34,34 @@ SWITCH_LIST: Final[tuple[TruenasSwitchEntityDescription, ...]] = (
         key="container",
         device="Apps",
         api="apps",
-        attr="state",
+        attribute="state",
         id="id",
-        turn_on="async_start_app",
-        turn_off="async_stop_app",
+        turn_on="app.start",
+        turn_off="app.stop",
+        value_fn=lambda x: x != "STOPPED",
     ),
     TruenasSwitchEntityDescription(
         key="vm",
         device="VMs",
         api="virtualmachines",
-        attr="running",
+        attribute="status",
         id="name",
         extra_attributes=EXTRA_ATTRS_VM,
-        turn_on="async_start_virtualmachine",
-        turn_off="async_stop_virtualmachine",
+        turn_on="virt.instance.start",
+        turn_off="virt.instance.stop",
+        params_off={"force": True},
         value_fn=lambda x: x == "RUNNING",
-    ),
-    TruenasSwitchEntityDescription(
-        key="app",
-        device="Charts",
-        api="charts",
-        attr="running",
-        id="charts",
-        extra_attributes=EXTRA_ATTRS_CHART,
-        turn_on="async_start_chart",
-        turn_off="async_stop_chart",
-        value_fn=lambda x: x == "RUNNING",
-    ),
-    TruenasSwitchEntityDescription(
-        key="jail",
-        device="Jails",
-        api="jails",
-        attr="state",
-        id="id",
-        extra_attributes=EXTRA_ATTRS_JAIL,
-        turn_on="async_start_jail",
-        turn_off="async_stop_jail",
-        value_fn=lambda x: x == "up",
     ),
     TruenasSwitchEntityDescription(
         key="service",
         device="Services",
         api="services",
-        attr="enable",
+        attribute="state",
         id="service",
         extra_attributes=EXTRA_ATTRS_SERVICE,
-        turn_on="async_start_jail",
-        turn_off="async_stop_jail",
+        turn_on="service.start",
+        turn_off="service.stop",
+        params_off={"silent": False},
         value_fn=lambda x: x != "STOPPED",
         device_class="services",
     ),
@@ -106,28 +80,22 @@ async def async_setup_entry(
     entities = []
     for description in SWITCH_LIST:
         if description.id:
-            for value in getattr(coordinator.data, description.api, {}):
-                obj = SwitchEntity(coordinator, description, value[description.id])
+            for value in coordinator.data.get(description.api, {}):
+                obj = SwitchSensor(coordinator, description, value[description.id])
                 entities.append(obj)
         else:
-            entities.append(SwitchEntity(coordinator, description))
+            entities.append(SwitchSensor(coordinator, description))
 
     async_add_entities(entities)
 
 
-class SwitchEntity(TruenasEntity, SwitchEntity):
+class SwitchSensor(TruenasEntity, SwitchEntity):
     """Switch."""
-
-    def __init__(
-        self, coordinator: TruenasDataUpdateCoordinator, description, id: str
-    ) -> None:
-        """Initialize switch."""
-        super().__init__(coordinator, description, id)
 
     @property
     def is_on(self) -> bool:
         """Return state."""
-        value = self.device_data.get(self.entity_description.attr)
+        value = finditem(self.device_data, self.entity_description.attribute)
         if self.entity_description.value_fn:
             return bool(self.entity_description.value_fn(value))
         return bool(value)
@@ -135,8 +103,13 @@ class SwitchEntity(TruenasEntity, SwitchEntity):
     async def async_turn_on(self) -> None:
         """Turn the entity on."""
         try:
-            await getattr(self.coordinator.api, self.entity_description.turn_on)(
-                self.uid
+            params = (
+                [self.uid]
+                if self.entity_description.params_on is None
+                else [self.uid, self.entity_description.params_on]
+            )
+            await self.coordinator.ws.async_call(
+                method=self.entity_description.turn_on, params=params
             )
         except TruenasException as error:
             _LOGGER.error(error)
@@ -146,8 +119,13 @@ class SwitchEntity(TruenasEntity, SwitchEntity):
     async def async_turn_off(self) -> None:
         """Turn the entity off."""
         try:
-            await getattr(self.coordinator.api, self.entity_description.turn_off)(
-                self.uid
+            params = (
+                [self.uid]
+                if self.entity_description.params_off is None
+                else [self.uid, self.entity_description.params_off]
+            )
+            await self.coordinator.ws.async_call(
+                method=self.entity_description.turn_off, params=params
             )
         except TruenasException as error:
             _LOGGER.error(error)

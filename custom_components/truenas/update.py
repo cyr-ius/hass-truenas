@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+import logging
 from typing import Any, Final
+
+from truenaspy import TruenasException
 
 from homeassistant.components.update import (
     UpdateDeviceClass,
@@ -15,22 +18,19 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import TruenasConfigEntry
-from .const import UPDATE_IMG
 from .coordinator import TruenasDataUpdateCoordinator
-from .entity import TruenasEntity
+from .entity import TruenasEntity, TruenasEntityDescription
+from .helpers import finditem
+
+_LOGGER = logging.getLogger(__name__)
 
 
-@dataclass
-class TruenasUpdateEntityDescription(UpdateEntityDescription):
+@dataclass(frozen=True, kw_only=True)
+class TruenasUpdateEntityDescription(UpdateEntityDescription, TruenasEntityDescription):
     """Class describing entities."""
 
     title: str | None = None
-    device: str | None = None
-    api: str | None = None
-    attr: str | None = "available"
-    extra_attributes: list[str] = field(default_factory=list)
-    id: str | None = None
-    cls: str = lambda *args: UpdateSensor(*args)
+    cls: str = lambda *args: UpdateSensor(*args)  # pylint: disable=W0108
 
 
 RESOURCE_LIST: Final[tuple[TruenasUpdateEntityDescription, ...]] = (
@@ -38,23 +38,15 @@ RESOURCE_LIST: Final[tuple[TruenasUpdateEntityDescription, ...]] = (
         key="system_update",
         device="System",
         api="update_infos",
-        attr="available",
-    ),
-    TruenasUpdateEntityDescription(
-        key="chart_update",
-        device="Charts",
-        api="charts",
-        attr="available",
-        id="id",
-        cls=lambda *args: UpdateChart(*args),
+        attribute="available",
     ),
     TruenasUpdateEntityDescription(
         key="app_update",
         device="Apps",
         api="apps",
-        attr="upgrade_available",
+        attribute="upgrade_available",
         id="id",
-        cls=lambda *args: UpdateApp(*args),
+        cls=lambda *args: UpdateAppSensor(*args),  # pylint: disable=W0108
     ),
 )
 
@@ -71,7 +63,7 @@ async def async_setup_entry(
         if description.id:
             specs_entities = [
                 description.cls(coordinator, description, value[description.id])
-                for value in getattr(coordinator.data, description.api, {})
+                for value in coordinator.data.get(description.api, {})
             ]
             entities.extend(specs_entities)
         else:
@@ -101,35 +93,35 @@ class UpdateSensor(TruenasEntity, UpdateEntity):
     @property
     def installed_version(self) -> str:
         """Version installed and in use."""
-        return self.coordinator.data.system_infos["version"]
+        return finditem(self.coordinator.data, "system_infos.version")
 
     @property
     def latest_version(self) -> str:
         """Latest version available for install."""
         return (
             version
-            if (version := self.device_data["version"])
+            if (version := finditem(self.device_data, "0.new.version"))
             else self.installed_version
         )
 
     async def async_install(self, version: str, backup: bool, **kwargs: Any) -> None:
         """Install an update."""
-        await self.coordinator.api.async_update_system(reboot=True)
-        await self.coordinator.async_refresh()
+        try:
+            await self.coordinator.ws.async_call(
+                method="update.install", params=[{"reboot": True}]
+            )
+        except TruenasException as error:
+            _LOGGER.error(error)
+        else:
+            await self.coordinator.async_refresh()
 
     @property
     def in_progress(self) -> int:
         """Update installation progress."""
-        if self.device_data.get("state") != "RUNNING":
-            return False
-
-        if self.device_data("progress") == 0:
-            self.device_data["progress"] = 1
-
-        return self.device_data("progress")
+        return finditem(self.device_data, "update_available.state") == "RUNNING"
 
 
-class UpdateChart(TruenasEntity, UpdateEntity):
+class UpdateAppSensor(TruenasEntity, UpdateEntity):
     """Define an TrueNAS Update Sensor."""
 
     _attr_supported_features = (
@@ -150,70 +142,21 @@ class UpdateChart(TruenasEntity, UpdateEntity):
     @property
     def installed_version(self) -> str | None:
         """Version installed and in use."""
-        return self.device_data.get("human_version")
-
-    @property
-    def latest_version(self) -> str | None:
-        """Latest version available for install."""
-        if self.device_data.get(UPDATE_IMG) is True:
-            return "Update image"
-        return self.device_data.get("human_latest_version")
-
-    @property
-    def release_summary(self) -> str | None:
-        """Return the release notes."""
-        return self.device_data.get("description")
-
-    @property
-    def in_progress(self) -> int:
-        """Update installation progress."""
-        if self.latest_version == self.installed_version:
-            self._installing = False
-        return self._installing
-
-    async def async_install(self, version: str, backup: bool, **kwargs: Any) -> None:
-        """Install an update."""
-        self._installing = True
-        await self.coordinator.api.async_update_chart(id=self.device_data["id"])
-        await self.coordinator.async_refresh()
-
-
-class UpdateApp(TruenasEntity, UpdateEntity):
-    """Define an TrueNAS Update Sensor."""
-
-    _attr_supported_features = (
-        UpdateEntityFeature.INSTALL | UpdateEntityFeature.PROGRESS
-    )
-
-    def __init__(
-        self,
-        coordinator: TruenasDataUpdateCoordinator,
-        entity_description,
-        uid: str | None = None,
-    ) -> None:
-        """Set up device update entity."""
-        super().__init__(coordinator, entity_description, uid)
-        self._attr_title = uid.capitalize()
-        self._installing = False
-
-    @property
-    def installed_version(self) -> str | None:
-        """Version installed and in use."""
-        return self.device_data.get("human_version")
+        return self.device_data.get("version")
 
     @property
     def latest_version(self) -> str:
         """Latest version available for install."""
         if self.device_data.get("upgrade_available"):
-            return "New version"
+            return self.device_data.get("lastest_version")
         if self.device_data.get("image_updates_available"):
             return "New image available"
-        return self.device_data.get("human_version")
+        return self.device_data.get("version")
 
     @property
     def release_summary(self) -> str | None:
         """Return the release notes."""
-        return self.device_data.get("description")
+        return finditem(self.device_data, "metadata.description")
 
     @property
     def in_progress(self) -> bool:
@@ -226,8 +169,16 @@ class UpdateApp(TruenasEntity, UpdateEntity):
         """Install an update."""
         self._installing = True
         id_app = self.device_data.get("id")
-        if self.device_data.get("upgrade_available"):
-            await self.coordinator.api.async_update_app(app_name=id_app)
-        if self.device_data.get("image_updates_available"):
-            await self.coordinator.api.async_pull_images(app_name=id_app)
-        await self.coordinator.async_refresh()
+        try:
+            if self.device_data.get("upgrade_available"):
+                await self.coordinator.ws.async_call(
+                    method="app.upgrade", params=[id_app]
+                )
+            if self.device_data.get("image_updates_available"):
+                await self.coordinator.ws.async_call(
+                    method="app.pull_images", params=[id_app, {"redeploy": True}]
+                )
+        except TruenasException as error:
+            _LOGGER.error(error)
+        else:
+            await self.coordinator.async_refresh()

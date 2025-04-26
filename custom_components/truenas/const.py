@@ -3,6 +3,7 @@
 from homeassistant.const import Platform
 
 CONF_NOTIFY = "notify"
+DEFAULT_PORT = 443
 DOMAIN = "truenas"
 PLATFORMS = [
     Platform.SENSOR,
@@ -49,75 +50,44 @@ EXTRA_ATTRS_CLOUDSYNC = [
     "time_started",
     "transfer_mode",
 ]
-EXTRA_ATTRS_CPU = [
-    "cpu_idle",
-    "cpu_interrupt",
-    "cpu_nice",
-    "cpu_system",
-    "cpu_user",
-]
 EXTRA_ATTRS_DATASET = [
     "atime",
     "available",
     "casesensitivity",
-    "checksum",
     "compression",
     "compressratio",
-    "copies",
     "deduplication",
     "encrypted",
     "encryption_algorithm",
-    "exec",
     "locked",
     "mountpoint",
     "pool",
     "quota",
     "readonly",
-    "recordsize",
     "sync",
     "type",
     "used",
 ]
 EXTRA_ATTRS_DISK = [
-    "acousticlevel",
-    "advpowermgmt",
-    "hddstandby_force",
-    "hddstandby",
+    "driver",
     "model",
     "rotationrate",
     "serial",
     "size",
-    "togglesmart",
     "type",
-]
-EXTRA_ATTRS_MEMORY = [
-    "memory-buffered_value",
-    "memory-cached_value",
-    "memory-free_value",
-    "memory-total_value",
-    "memory-used_value",
+    "imported_zpool",
 ]
 EXTRA_ATTRS_NETWORK = [
-    "active_media_subtype",
-    "active_media_type",
-    "description",
-    "link_address",
-    "link_state",
     "mtu",
+    "fake",
+    "state.media_type",
+    "state.active_media_subtype",
+    "state.hardware_link_address",
+    "aliases.0.address",
+    "ipv4_dhcp",
+    "ipv6_auto",
 ]
-EXTRA_ATTRS_POOL = [
-    "autotrim",
-    "available_gib",
-    "healthy",
-    "is_decrypted",
-    "path",
-    "scrub_end",
-    "scrub_secs_left",
-    "scrub_start",
-    "scrub_state",
-    "status",
-    "total_gib",
-]
+EXTRA_ATTRS_POOL = ["autotrim", "healthy", "path", "status", "size", "errors"]
 EXTRA_ATTRS_REPLICATION = [
     "auto",
     "direction",
@@ -135,7 +105,6 @@ EXTRA_ATTRS_REPLICATION = [
 ]
 EXTRA_ATTRS_SNAPSHOTTASK = [
     "allow_empty",
-    "datetime",
     "enabled",
     "lifetime_unit",
     "lifetime_value",
@@ -144,44 +113,23 @@ EXTRA_ATTRS_SNAPSHOTTASK = [
     "state",
     "vmware_sync",
 ]
-EXTRA_ATTRS_JAIL = [
-    "comment",
-    "ip4_addr",
-    "ip6_addr",
-    "jail_zfs_dataset",
-    "last_started",
-    "plugin_name",
-    "release",
-    "type",
-]
 EXTRA_ATTRS_VM = [
     "autostart",
-    "cores",
-    "description",
+    "cpu",
     "memory",
-    "threads",
-    "vcpus",
+    "image.description",
+    "aliases.0.address",
 ]
-EXTRA_ATTRS_SERVICE = [
-    "enable",
-    "state",
-]
-EXTRA_ATTRS_CHART = [
-    "container_images_update_available",
-    "human_version",
-    "human_latest_version",
-    "name",
-    "portal",
-    "update_available",
-    "version",
-]
-EXTRA_ATTRS_APP = [
-    "state",
-    "human_version",
-    "upgrade_available",
-    "image_updates_available",
-    "version",
-]
+EXTRA_ATTRS_SERVICE = ["enable", "state"]
+EXTRA_ATTRS_APP = ["custom_app", "human_version", "version", "metadata.train"]
 EXTRA_ATTRS_ALERT = []
 EXTRA_ATTRS_SMARTDISK = ["serial", "model", "zfs_guid"]
 EXTRA_ATTRS_UPDATE = ["current_train"]
+EXTRA_ATTRS_RSYNCTASK = [
+    "id",
+    "remotehost",
+    "recursive",
+    "enabled",
+    "remotepath",
+    "direction",
+]

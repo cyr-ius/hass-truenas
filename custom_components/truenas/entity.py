@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
+from dataclasses import dataclass
 import logging
 from typing import Any
 
@@ -14,7 +15,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
 from .coordinator import TruenasDataUpdateCoordinator
-from .helpers import format_attribute
+from .helpers import finditem
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -45,7 +46,7 @@ class TruenasEntity(CoordinatorEntity[TruenasDataUpdateCoordinator], Entity):
             )
 
         # Device info
-        system_info = coordinator.data.system_infos
+        system_info = coordinator.data.get("system_infos", {})
         device_name = coordinator.config_entry.data[CONF_NAME].capitalize()
         identifier = f"{device_name} {entity_description.device}"
         self._attr_device_info = DeviceInfo(
@@ -75,29 +76,43 @@ class TruenasEntity(CoordinatorEntity[TruenasDataUpdateCoordinator], Entity):
         # Data for device
         self.device_data = self._handle_data_finder()
 
+    @property
+    def extra_state_attributes(self) -> Mapping[str, Any]:
+        """Return the state attributes."""
+        try:
+            if self.entity_description.extra_attributes is None:
+                return {}
+            return {
+                key: finditem(self.device_data, key)
+                for key in self.entity_description.extra_attributes
+            }
+        except AttributeError as error:
+            _LOGGER.error(error)
+
     @callback
     def _handle_coordinator_update(self) -> None:
         """Handle updated data from the coordinator."""
         self.device_data = self._handle_data_finder()
         super()._handle_coordinator_update()
 
-    @property
-    def extra_state_attributes(self) -> Mapping[str, Any]:
-        """Return the state attributes."""
-        try:
-            return {
-                format_attribute(key): self.device_data.get(key)
-                for key in self.entity_description.extra_attributes
-            }
-        except AttributeError as error:
-            _LOGGER.error(error)
-
     def _handle_data_finder(self, default: Any | None = None) -> Any:
         """Find data."""
-        data = getattr(self.coordinator.data, self.entity_description.api, default)
+        data = finditem(self.coordinator.data, self.entity_description.api, default)
         if self.uid and isinstance(data, list):
             data = next(
                 (d for d in data if d.get(self.entity_description.id) == self.uid),
                 default,
             )
         return data
+
+
+@dataclass(frozen=True, kw_only=True)
+class TruenasEntityDescription:
+    """Base class for entity description."""
+
+    id: str | None = None
+    device: str | None = None
+    api: str | None = None
+    attribute: str | None = None
+    extra_attributes: list[str] | None = None
+    value_fn: Callable | None = None
