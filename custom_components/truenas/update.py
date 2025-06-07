@@ -148,7 +148,7 @@ class UpdateAppSensor(TruenasEntity, UpdateEntity):
     def latest_version(self) -> str:
         """Latest version available for install."""
         if self.device_data.get("upgrade_available"):
-            return self.device_data.get("lastest_version")
+            return self.device_data.get("latest_version")
         if self.device_data.get("image_updates_available"):
             return "New image available"
         return self.device_data.get("version")
