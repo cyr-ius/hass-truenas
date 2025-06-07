@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import logging
+from dataclasses import dataclass
 from typing import Any, Final
 
 from truenaspy import TruenasException
@@ -108,7 +108,7 @@ class UpdateSensor(TruenasEntity, UpdateEntity):
         """Install an update."""
         try:
             await self.coordinator.ws.async_call(
-                method="update.install", params=[{"reboot": True}]
+                method="update.update", params=[{"resume": False, "reboot": True}]
             )
         except TruenasException as error:
             _LOGGER.error(error)
