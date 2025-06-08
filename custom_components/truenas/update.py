@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import logging
 from dataclasses import dataclass
+import logging
 from typing import Any, Final
 
 from truenaspy import TruenasException
@@ -30,7 +30,7 @@ class TruenasUpdateEntityDescription(UpdateEntityDescription, TruenasEntityDescr
     """Class describing entities."""
 
     title: str | None = None
-    cls: str = lambda *args: UpdateSensor(*args)  # pylint: disable=W0108
+    cls: str = lambda *args: UpdateSensor(*args)  # pylint: disable=unnecessary-lambda
 
 
 RESOURCE_LIST: Final[tuple[TruenasUpdateEntityDescription, ...]] = (
@@ -46,7 +46,7 @@ RESOURCE_LIST: Final[tuple[TruenasUpdateEntityDescription, ...]] = (
         api="apps",
         attribute="upgrade_available",
         id="id",
-        cls=lambda *args: UpdateAppSensor(*args),  # pylint: disable=W0108
+        cls=lambda *args: UpdateAppSensor(*args),  # pylint: disable=unnecessary-lambda
     ),
 )
 
