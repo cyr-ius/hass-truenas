@@ -2,14 +2,12 @@
 
 from __future__ import annotations
 
+import logging
 from asyncio import Task
 from collections import Counter
 from datetime import timedelta
-import logging
 
 from aiohttp import WebSocketError
-from truenaspy import AuthenticationFailed, TruenasException, TruenasWebsocket
-
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     CONF_HOST,
@@ -23,6 +21,7 @@ from homeassistant.core import CALLBACK_TYPE, Event, HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryError
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from truenaspy import AuthenticationFailed, TruenasException, TruenasWebsocket
 
 from .const import DOMAIN
 from .helpers import finditem
@@ -69,11 +68,12 @@ class TruenasDataUpdateCoordinator(DataUpdateCoordinator):
     async def on_reporting(self, data) -> None:
         """Calbback for websocket."""
         self._events.update({data["collection"].replace(".", "_"): data["fields"]})
-        # self.async_set_updated_data(self._events)
 
     async def on_events(self, data) -> None:
         """Calbback for websocket."""
         name = data["collection"].replace(".", "_")
+        if name not in self._events:
+            self._events[name] = []
         if data["msg"].upper() == "ADDED":
             self._events[name].append(data["fields"])
         if data["msg"].upper() == "REMOVED":
@@ -81,7 +81,6 @@ class TruenasDataUpdateCoordinator(DataUpdateCoordinator):
             self._events[name] = [
                 event for event in self._events[name] if event["id"] != id_to_remove
             ]
-        # self.async_set_updated_data(self._events)
 
     @callback
     def _handle_websocket(self, event: Event | None = None) -> None:
