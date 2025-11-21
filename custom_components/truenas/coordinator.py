@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
-import logging
 from asyncio import Task
 from collections import Counter
 from datetime import timedelta
+import logging
+from typing import Any
 
 from aiohttp import WebSocketError
+from packaging import version
+from truenaspy import AuthenticationFailed, TruenasException, TruenasWebsocket
+
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     CONF_HOST,
@@ -21,7 +25,6 @@ from homeassistant.core import CALLBACK_TYPE, Event, HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryError
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
-from truenaspy import AuthenticationFailed, TruenasException, TruenasWebsocket
 
 from .const import DOMAIN
 from .helpers import finditem
@@ -38,7 +41,7 @@ class TruenasDataUpdateCoordinator(DataUpdateCoordinator):
         self.unsub: CALLBACK_TYPE | None = None
         self._task: Task | None = None
         self._events = {}
-        self.ws: TruenasWebsocket | None = None
+        self.ws: TruenasWebsocket
         super().__init__(
             hass, _LOGGER, name=DOMAIN, update_interval=timedelta(seconds=SCAN_INTERVAL)
         )
@@ -124,7 +127,27 @@ class TruenasDataUpdateCoordinator(DataUpdateCoordinator):
     async def _async_update_data(self) -> dict:
         """Update data."""
         try:
-            # Fetch snaspshots
+            # FETCH system infos to check version
+            system_infos = await self._call("system.info")
+            data: dict[str, Any] = {"system_infos": system_infos}
+
+            # Fetch network interfaces
+            interfaces = await self._call("interface.query")
+            data["interfaces"] = list(
+                filter(lambda x: "mac" not in x["name"], interfaces)
+            )
+
+            # Fetch network statistics
+            net_stats = finditem(self._events, "reporting_realtime.interfaces", {})
+            data["netstats"] = [
+                {
+                    "name": iface.get("name"),
+                    "statistics": net_stats.get(iface.get("name"), {}),
+                }
+                for iface in data["interfaces"]
+            ]
+
+            # Fetch snapshots
             snapshots = (
                 await self._call(
                     method="zfs.snapshot.query",
@@ -137,71 +160,79 @@ class TruenasDataUpdateCoordinator(DataUpdateCoordinator):
                     ],
                 ),
             )
-
-            # Fetch disk temperatures
-            disktemps = []
-            disks = await self._call("disk.details")
-            all_disks = {
-                disk.get("identifier"): disk
-                for disk in disks.get("used", []) + disks.get("unused", [])
-            }
-            netdata = await self._call("reporting.netdata_graph", ["disktemp"])
-            for disktemp in netdata:
-                identifier = disktemp.get("identifier", "")
-                ids = identifier.split("|")
-                if len(ids) == 3:
-                    disk_id = ids[2].strip()
-                    disk = all_disks.get(disk_id)
-                    if disk:
-                        temp = round(
-                            finditem(
-                                disktemp, "aggregations.mean.temperature_value", 0
-                            ),
-                            2,
-                        )
-                        disktemps.append({"name": disk["name"], "temperature": temp})
-
-            # Fetch network data
-            interfaces = await self._call("interface.query")
-            interfaces = list(filter(lambda x: "mac" not in x["name"], interfaces))
-            net_stats = finditem(self._events, "reporting_realtime.interfaces", {})
-            netstats = [
-                {
-                    "name": iface.get("name"),
-                    "statistics": net_stats.get(iface.get("name"), {}),
-                }
-                for iface in interfaces
-            ]
-
-            # Fetch snapshots
-            snapshots = [
+            data["snapshots"] = [
                 {"name": k, "count": v}
                 for k, v in Counter(
                     s["pool"] for s in snapshots[0] if len(snapshots) > 0
                 ).items()
             ]
 
-            data = {
-                "system_infos": await self._call("system.info"),
-                "update_available": await self._call("update.check_available"),
-                "update_infos": await self._call("update.get_pending"),
-                "disks": disks,
-                "disktemps": disktemps,
+            # Fetch disks data
+            data["disks"] = await self._call("disk.details")
+
+            if version.parse(system_infos["version"]) <= version.parse("25.10.0"):
+                """Fetch additional data for versions < 25.10.0."""
+
+                async def disktemps() -> list[dict[str, Any] | None]:
+                    """Fetch disks data for versions < 25.10.0."""
+                    disktemps = []
+
+                    all_disks = {
+                        disk.get("identifier"): disk
+                        for disk in data["disks"].get("used", [])
+                        + data["disks"].get("unused", [])
+                    }
+
+                    netdata = await self._call("reporting.netdata_graph", ["disktemp"])
+                    for disktemp in netdata:
+                        identifier = disktemp.get("identifier", "")
+                        ids = identifier.split("|")
+                        if len(ids) == 3:
+                            disk_id = ids[2].strip()
+                            disk = all_disks.get(disk_id)
+                            if disk:
+                                temp = round(
+                                    finditem(
+                                        disktemp,
+                                        "aggregations.mean.temperature_value",
+                                        0,
+                                    ),
+                                    2,
+                                )
+                                disktemps.append(
+                                    {"name": disk["name"], "temperature": temp}
+                                )
+                    return disktemps
+
+                data["update_available"] = await self._call("update.check_available")
+                data["update_infos"] = await self._call("update.get_pending")
+                data["smartdisks"] = await self._call("smart.test.results")
+                data["disks_temperatures"] = await disktemps()
+                data["virtualmachines"] = await self._call("virt.instance.query")
+
+            if version.parse(system_infos["version"]) >= version.parse("25.10.0"):
+                """Fetch additional data for versions >= 25.10.0."""
+                data["update_available"] = await self._call("update.available_versions")
+                data["update_infos"] = await self._call("update.status")
+                data["disks_temperatures"] = [
+                    {"name": k, "temperature": v}
+                    for k, v in (await self._call("disk.temperatures")).items()
+                ]
+                data["virtualmachines"] = await self._call("vm.query")
+
+            other_data = {
                 "apps": await self._call("app.query"),
                 "datasets": await self._call("pool.dataset.details"),
                 "pools": await self._call("pool.query"),
                 "services": await self._call("service.query"),
-                "virtualmachines": await self._call("virt.instance.query"),
-                "smartdisks": await self._call("smart.test.results"),
                 "replications": await self._call("replication.query"),
                 "cloudsync": await self._call("cloudsync.query"),
                 "snapshottasks": await self._call("pool.snapshottask.query"),
                 "rsynctasks": await self._call("rsynctask.query"),
-                "interfaces": interfaces,
-                "snapshots": snapshots,
-                "netstats": netstats,
                 "events": self._events,
             }
+
+            data.update(other_data)
             _LOGGER.debug("Data: %s", data)
 
         except TruenasException as error:

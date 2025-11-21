@@ -241,7 +241,7 @@ RESOURCE_LIST: Final[tuple[TruenasSensorEntityDescription, ...]] = (
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         state_class=SensorStateClass.MEASUREMENT,
         device="Disk",
-        api="disktemps",
+        api="disks_temperatures",
         attribute="temperature",
         id="name",
     ),

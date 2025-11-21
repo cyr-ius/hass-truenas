@@ -6,6 +6,7 @@ from dataclasses import dataclass
 import logging
 from typing import Any, Final
 
+from packaging import version
 from truenaspy import TruenasException
 
 from homeassistant.components.update import (
@@ -33,13 +34,7 @@ class TruenasUpdateEntityDescription(UpdateEntityDescription, TruenasEntityDescr
     cls: str = lambda *args: UpdateSensor(*args)  # pylint: disable=unnecessary-lambda
 
 
-RESOURCE_LIST: Final[tuple[TruenasUpdateEntityDescription, ...]] = (
-    TruenasUpdateEntityDescription(
-        key="system_update",
-        device="System",
-        api="update_infos",
-        attribute="available",
-    ),
+RESOURCE_LIST: Final[list[TruenasUpdateEntityDescription]] = [
     TruenasUpdateEntityDescription(
         key="app_update",
         device="Apps",
@@ -48,7 +43,25 @@ RESOURCE_LIST: Final[tuple[TruenasUpdateEntityDescription, ...]] = (
         id="id",
         cls=lambda *args: UpdateAppSensor(*args),  # pylint: disable=unnecessary-lambda
     ),
-)
+]
+
+RESOURCE_LIST_25_04: Final[list[TruenasUpdateEntityDescription]] = [
+    TruenasUpdateEntityDescription(
+        key="system_update",
+        device="System",
+        api="update_infos",
+        attribute="available",
+    )
+]
+
+RESOURCE_LIST_25_10: Final[list[TruenasUpdateEntityDescription]] = [
+    TruenasUpdateEntityDescription(
+        key="system_update",
+        device="System",
+        api="update_infos",
+        attribute="status.new_version",
+    )
+]
 
 
 async def async_setup_entry(
@@ -59,7 +72,15 @@ async def async_setup_entry(
     """Set up the platform."""
     coordinator = entry.runtime_data
     entities = []
-    for description in RESOURCE_LIST:
+    system_infos = coordinator.data.get("system_infos", {})
+
+    resources = (
+        RESOURCE_LIST + RESOURCE_LIST_25_10
+        if version.parse(system_infos["version"]) >= version.parse("25.10.0")
+        else RESOURCE_LIST + RESOURCE_LIST_25_04
+    )
+
+    for description in resources:
         if description.id:
             specs_entities = [
                 description.cls(coordinator, description, value[description.id])
@@ -73,7 +94,7 @@ async def async_setup_entry(
 
 
 class UpdateSensor(TruenasEntity, UpdateEntity):
-    """Define an TrueNAS Update Sensor."""
+    """Define an TrueNAS System Update Sensor."""
 
     _attr_device_class = UpdateDeviceClass.FIRMWARE
     _attr_supported_features = (
@@ -83,7 +104,7 @@ class UpdateSensor(TruenasEntity, UpdateEntity):
     def __init__(
         self,
         coordinator: TruenasDataUpdateCoordinator,
-        entity_description,
+        entity_description: TruenasUpdateEntityDescription,
         uid: str | None = None,
     ) -> None:
         """Set up device update entity."""
@@ -98,11 +119,14 @@ class UpdateSensor(TruenasEntity, UpdateEntity):
     @property
     def latest_version(self) -> str:
         """Latest version available for install."""
-        return (
-            version
-            if (version := finditem(self.device_data, "0.new.version"))
-            else self.installed_version
-        )
+        if version.parse(self.installed_version) <= version.parse("25.10.0"):
+            # For versions <= 25.10.0
+            return (
+                ver
+                if (ver := finditem(self.device_data, "0.new.version"))
+                else self.installed_version
+            )
+        return finditem(self.device_data, "status.new_version", self.installed_version)
 
     async def async_install(self, version: str, backup: bool, **kwargs: Any) -> None:
         """Install an update."""
@@ -118,11 +142,14 @@ class UpdateSensor(TruenasEntity, UpdateEntity):
     @property
     def in_progress(self) -> int:
         """Update installation progress."""
-        return finditem(self.device_data, "update_available.state") == "RUNNING"
+        if version.parse(self.installed_version) <= version.parse("25.10.0"):
+            # Update installation progress for versions <= 25.10.0
+            return finditem(self.device_data, "update_available.state") == "RUNNING"
+        return finditem(self.device_data, "update_download_progress") is not None
 
 
 class UpdateAppSensor(TruenasEntity, UpdateEntity):
-    """Define an TrueNAS Update Sensor."""
+    """Define an TrueNAS Apps Update Sensor."""
 
     _attr_supported_features = (
         UpdateEntityFeature.INSTALL | UpdateEntityFeature.PROGRESS
@@ -131,8 +158,8 @@ class UpdateAppSensor(TruenasEntity, UpdateEntity):
     def __init__(
         self,
         coordinator: TruenasDataUpdateCoordinator,
-        entity_description,
-        uid: str | None = None,
+        entity_description: TruenasUpdateEntityDescription,
+        uid: str,
     ) -> None:
         """Set up device update entity."""
         super().__init__(coordinator, entity_description, uid)

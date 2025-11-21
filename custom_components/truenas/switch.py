@@ -7,6 +7,7 @@ from dataclasses import dataclass
 import logging
 from typing import Any, Final
 
+from packaging import version
 from truenaspy import TruenasException
 
 from homeassistant.components.switch import SwitchEntity, SwitchEntityDescription
@@ -29,7 +30,7 @@ class TruenasSwitchEntityDescription(SwitchEntityDescription, TruenasEntityDescr
     params_off: dict[str, Any] | None = None
 
 
-SWITCH_LIST: Final[tuple[TruenasSwitchEntityDescription, ...]] = (
+SWITCH_LIST: Final[list[TruenasSwitchEntityDescription]] = [
     TruenasSwitchEntityDescription(
         key="container",
         device="Apps",
@@ -39,18 +40,6 @@ SWITCH_LIST: Final[tuple[TruenasSwitchEntityDescription, ...]] = (
         turn_on="app.start",
         turn_off="app.stop",
         value_fn=lambda x: x != "STOPPED",
-    ),
-    TruenasSwitchEntityDescription(
-        key="vm",
-        device="VMs",
-        api="virtualmachines",
-        attribute="status",
-        id="name",
-        extra_attributes=EXTRA_ATTRS_VM,
-        turn_on="virt.instance.start",
-        turn_off="virt.instance.stop",
-        params_off={"force": True},
-        value_fn=lambda x: x == "RUNNING",
     ),
     TruenasSwitchEntityDescription(
         key="service",
@@ -65,7 +54,38 @@ SWITCH_LIST: Final[tuple[TruenasSwitchEntityDescription, ...]] = (
         value_fn=lambda x: x != "STOPPED",
         device_class="services",
     ),
-)
+]
+
+# Fix for TrueNAS 25.04 compatibility
+SWITCH_LIST_25_04: Final[list[TruenasSwitchEntityDescription]] = [
+    TruenasSwitchEntityDescription(
+        key="vm",
+        device="VMs",
+        api="virtualmachines",
+        attribute="status",
+        id="name",
+        extra_attributes=EXTRA_ATTRS_VM,
+        turn_on="virt.instance.start",
+        turn_off="virt.instance.stop",
+        params_off={"force": True},
+        value_fn=lambda x: x == "RUNNING",
+    ),
+]
+# Fix for TrueNAS 25.10 compatibility
+SWITCH_LIST_25_10: Final[list[TruenasSwitchEntityDescription]] = [
+    TruenasSwitchEntityDescription(
+        key="vm",
+        device="VMs",
+        api="virtualmachines",
+        attribute="status.state",
+        id="name",
+        extra_attributes=EXTRA_ATTRS_VM,
+        turn_on="vm.start",
+        turn_off="vm.stop",
+        params_off={"force": True},
+        value_fn=lambda x: x == "RUNNING",
+    ),
+]
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -78,7 +98,15 @@ async def async_setup_entry(
     """Set the sensor platform."""
     coordinator = entry.runtime_data
     entities = []
-    for description in SWITCH_LIST:
+    system_infos = coordinator.data.get("system_infos", {})
+
+    switch_list = (
+        SWITCH_LIST + SWITCH_LIST_25_10
+        if version.parse(system_infos["version"]) >= version.parse("25.10.0")
+        else SWITCH_LIST + SWITCH_LIST_25_04
+    )
+
+    for description in switch_list:
         if description.id:
             for value in coordinator.data.get(description.api, {}):
                 obj = SwitchSensor(coordinator, description, value[description.id])
