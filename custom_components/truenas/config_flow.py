@@ -70,19 +70,19 @@ class TruenasFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 name = user_input[CONF_NAME]
                 await self.async_set_unique_id(name)
                 self._abort_if_unique_id_configured()
-                ws = TruenasWebsocket(
+                websocket = TruenasWebsocket(
                     user_input[CONF_HOST],
                     user_input[CONF_PORT],
                     user_input[CONF_SSL],
                     user_input[CONF_VERIFY_SSL],
                     async_create_clientsession(self.hass),
                 )
-                await ws.async_connect(
+                await websocket.async_connect(
                     user_input[CONF_USERNAME], user_input[CONF_PASSWORD]
                 )
-                if ws.is_connected is False:
+                if websocket.is_connected is False:
                     errors["base"] = "cannot_connect"
-                if ws.is_logged is False:
+                if websocket.is_logged is False:
                     errors["base"] = "invalid_auth"
             except AuthenticationFailed:
                 errors["base"] = "invalid_auth"
@@ -95,8 +95,8 @@ class TruenasFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                     title=f"{DOMAIN} ({name})", data=user_input
                 )
             finally:
-                if ws.is_connected:
-                    await ws.async_close()
+                if websocket.is_connected:
+                    await websocket.async_close()
 
         return self.async_show_form(
             step_id="user", data_schema=DATA_SCHEMA, errors=errors

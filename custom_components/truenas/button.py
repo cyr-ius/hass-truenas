@@ -62,7 +62,9 @@ class ButtonSensor(TruenasEntity, ButtonEntity):
     async def async_press(self) -> None:
         """Handle the button press."""
         try:
-            await self.coordinator.ws.async_call(method=self.entity_description.fn)
+            await self.coordinator.websocket.async_call(
+                method=self.entity_description.fn
+            )
         except TruenasException as error:
             _LOGGER.error(error)
         else:

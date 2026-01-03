@@ -131,7 +131,7 @@ class UpdateSensor(TruenasEntity, UpdateEntity):
     async def async_install(self, version: str, backup: bool, **kwargs: Any) -> None:
         """Install an update."""
         try:
-            await self.coordinator.ws.async_call(
+            await self.coordinator.websocket.async_call(
                 method="update.update", params=[{"resume": False, "reboot": True}]
             )
         except TruenasException as error:
@@ -198,11 +198,11 @@ class UpdateAppSensor(TruenasEntity, UpdateEntity):
         id_app = self.device_data.get("id")
         try:
             if self.device_data.get("upgrade_available"):
-                await self.coordinator.ws.async_call(
+                await self.coordinator.websocket.async_call(
                     method="app.upgrade", params=[id_app]
                 )
             if self.device_data.get("image_updates_available"):
-                await self.coordinator.ws.async_call(
+                await self.coordinator.websocket.async_call(
                     method="app.pull_images", params=[id_app, {"redeploy": True}]
                 )
         except TruenasException as error:

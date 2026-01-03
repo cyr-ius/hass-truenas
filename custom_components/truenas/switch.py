@@ -136,7 +136,7 @@ class SwitchSensor(TruenasEntity, SwitchEntity):
                 if self.entity_description.params_on is None
                 else [self.uid, self.entity_description.params_on]
             )
-            await self.coordinator.ws.async_call(
+            await self.coordinator.websocket.async_call(
                 method=self.entity_description.turn_on, params=params
             )
         except TruenasException as error:
@@ -152,7 +152,7 @@ class SwitchSensor(TruenasEntity, SwitchEntity):
                 if self.entity_description.params_off is None
                 else [self.uid, self.entity_description.params_off]
             )
-            await self.coordinator.ws.async_call(
+            await self.coordinator.websocket.async_call(
                 method=self.entity_description.turn_off, params=params
             )
         except TruenasException as error:
