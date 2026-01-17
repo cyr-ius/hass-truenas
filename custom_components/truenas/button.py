@@ -20,7 +20,8 @@ from .entity import TruenasEntity, TruenasEntityDescription
 class TruenasButtonEntityDescription(ButtonEntityDescription, TruenasEntityDescription):
     """Class describing entities."""
 
-    fn: str | None = None
+    fn: str
+    attribute: str | None = None
 
 
 BUTTON_LIST: Final[tuple[TruenasButtonEntityDescription, ...]] = (
@@ -58,6 +59,8 @@ async def async_setup_entry(
 
 class ButtonSensor(TruenasEntity, ButtonEntity):
     """Representation of a button for TrueNAS."""
+
+    entity_description: TruenasButtonEntityDescription
 
     async def async_press(self) -> None:
         """Handle the button press."""

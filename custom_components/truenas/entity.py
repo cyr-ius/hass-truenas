@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping
+from collections.abc import Mapping
 from dataclasses import dataclass
-import logging
 from typing import Any
 
 from homeassistant.const import CONF_NAME
@@ -17,18 +16,17 @@ from .const import DOMAIN
 from .coordinator import TruenasDataUpdateCoordinator
 from .helpers import finditem
 
-_LOGGER = logging.getLogger(__name__)
-
 
 class TruenasEntity(CoordinatorEntity[TruenasDataUpdateCoordinator], Entity):
     """Define entity."""
 
     _attr_has_entity_name = True
+    entity_description: TruenasEntityDescription
 
     def __init__(
         self,
         coordinator: TruenasDataUpdateCoordinator,
-        entity_description,
+        entity_description: TruenasEntityDescription,
         uid: str | None = None,
     ) -> None:
         """Initialize."""
@@ -36,7 +34,7 @@ class TruenasEntity(CoordinatorEntity[TruenasDataUpdateCoordinator], Entity):
         self.entity_description = entity_description
         self.uid = uid
 
-        if entity_description.name != UNDEFINED:
+        if entity_description.name and entity_description.name != UNDEFINED:
             self._attr_name = entity_description.name.capitalize()
         if uid:
             self._attr_name = (
@@ -77,17 +75,14 @@ class TruenasEntity(CoordinatorEntity[TruenasDataUpdateCoordinator], Entity):
         self.device_data = self._handle_data_finder()
 
     @property
-    def extra_state_attributes(self) -> Mapping[str, Any]:
+    def extra_state_attributes(self) -> Mapping[str, Any] | None:
         """Return the state attributes."""
-        try:
-            if self.entity_description.extra_attributes is None:
-                return {}
+        if self.entity_description.extra_attributes:
             return {
                 key: finditem(self.device_data, key)
                 for key in self.entity_description.extra_attributes
             }
-        except AttributeError as error:
-            _LOGGER.error(error)
+        return None
 
     @callback
     def _handle_coordinator_update(self) -> None:
@@ -95,6 +90,7 @@ class TruenasEntity(CoordinatorEntity[TruenasDataUpdateCoordinator], Entity):
         self.device_data = self._handle_data_finder()
         super()._handle_coordinator_update()
 
+    @callback
     def _handle_data_finder(self, default: Any | None = None) -> Any:
         """Find data."""
         data = finditem(self.coordinator.data, self.entity_description.api, default)
@@ -110,9 +106,10 @@ class TruenasEntity(CoordinatorEntity[TruenasDataUpdateCoordinator], Entity):
 class TruenasEntityDescription:
     """Base class for entity description."""
 
+    api: str
+    attribute: str
+    name: str
+    key: str
+    device: str
     id: str | None = None
-    device: str | None = None
-    api: str | None = None
-    attribute: str | None = None
     extra_attributes: list[str] | None = None
-    value_fn: Callable | None = None

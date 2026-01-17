@@ -24,8 +24,9 @@ from .helpers import finditem
 class TruenasSwitchEntityDescription(SwitchEntityDescription, TruenasEntityDescription):
     """Class describing mikrotik entities."""
 
-    turn_on: Callable | None = None
-    turn_off: Callable | None = None
+    turn_on: str
+    turn_off: str
+    value_fn: Callable
     params_on: dict[str, Any] | None = None
     params_off: dict[str, Any] | None = None
 
@@ -52,7 +53,6 @@ SWITCH_LIST: Final[list[TruenasSwitchEntityDescription]] = [
         turn_off="service.stop",
         params_off={"silent": False},
         value_fn=lambda x: x != "STOPPED",
-        device_class="services",
     ),
 ]
 
@@ -119,6 +119,8 @@ async def async_setup_entry(
 
 class SwitchSensor(TruenasEntity, SwitchEntity):
     """Switch."""
+
+    entity_description: TruenasSwitchEntityDescription
 
     @property
     def is_on(self) -> bool:

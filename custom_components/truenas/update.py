@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 import logging
 from typing import Any, Final
@@ -30,8 +31,9 @@ _LOGGER = logging.getLogger(__name__)
 class TruenasUpdateEntityDescription(UpdateEntityDescription, TruenasEntityDescription):
     """Class describing entities."""
 
-    title: str | None = None
-    cls: str = lambda *args: UpdateSensor(*args)  # pylint: disable=unnecessary-lambda
+    cls: Callable[..., UpdateSensor | UpdateAppSensor] = lambda *args: UpdateSensor(
+        *args
+    )
 
 
 RESOURCE_LIST: Final[list[TruenasUpdateEntityDescription]] = [
@@ -41,7 +43,7 @@ RESOURCE_LIST: Final[list[TruenasUpdateEntityDescription]] = [
         api="apps",
         attribute="upgrade_available",
         id="id",
-        cls=lambda *args: UpdateAppSensor(*args),  # pylint: disable=unnecessary-lambda
+        cls=lambda *args: UpdateAppSensor(*args),
     ),
 ]
 
@@ -100,6 +102,8 @@ class UpdateSensor(TruenasEntity, UpdateEntity):
     _attr_supported_features = (
         UpdateEntityFeature.INSTALL | UpdateEntityFeature.PROGRESS
     )
+
+    entity_description: TruenasUpdateEntityDescription
 
     def __init__(
         self,

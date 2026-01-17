@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Final
 
@@ -31,9 +32,10 @@ class TruenasBinarySensorEntityDescription(
 ):
     """Class describing entities."""
 
-    icon_disabled: str | None = None
-    icon_enabled: str | None = None
-    cls: str = lambda *args: BinarySensor(*args)  # pylint: disable=W0108
+    icon_disabled: str
+    icon_enabled: str
+    value_fn: Callable | None = None
+    cls: Callable[..., BinarySensor] = lambda *args: BinarySensor(*args)
 
 
 RESOURCE_LIST: Final[tuple[TruenasBinarySensorEntityDescription, ...]] = (
@@ -69,6 +71,8 @@ RESOURCE_LIST: Final[tuple[TruenasBinarySensorEntityDescription, ...]] = (
         attribute="state.link_state",
         extra_attributes=EXTRA_ATTRS_NETWORK,
         value_fn=lambda x: x == "LINK_STATE_UP",
+        icon_enabled="",
+        icon_disabled="",
     ),
     TruenasBinarySensorEntityDescription(
         key="alerts",
@@ -78,7 +82,7 @@ RESOURCE_LIST: Final[tuple[TruenasBinarySensorEntityDescription, ...]] = (
         device="System",
         api="events",
         attribute="alert_list",
-        cls=lambda *args: AlertBinarySensor(*args),  # pylint: disable=W0108
+        cls=lambda *args: AlertBinarySensor(*args),
     ),
 )
 
@@ -101,6 +105,8 @@ async def async_setup_entry(
 
 class BinarySensor(TruenasEntity, BinarySensorEntity):
     """Define an Truenas Binary Sensor."""
+
+    entity_description: TruenasBinarySensorEntityDescription
 
     @property
     def is_on(self) -> bool:

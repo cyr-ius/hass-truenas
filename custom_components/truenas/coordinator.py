@@ -5,13 +5,12 @@ from __future__ import annotations
 from collections import Counter
 from datetime import timedelta
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from aiohttp import WebSocketError
 from packaging import version
 from truenaspy import TruenasException, TruenasWebsocket
 
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     CONF_HOST,
     CONF_PASSWORD,
@@ -28,6 +27,10 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from .const import DOMAIN
 from .helpers import finditem
 
+if TYPE_CHECKING:
+    from . import TruenasConfigEntry
+
+
 _LOGGER = logging.getLogger(__name__)
 SCAN_INTERVAL = 60
 
@@ -35,14 +38,20 @@ SCAN_INTERVAL = 60
 class TruenasDataUpdateCoordinator(DataUpdateCoordinator):
     """Define an object to fetch data."""
 
-    def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
+    config_entry: TruenasConfigEntry
+
+    def __init__(self, hass: HomeAssistant, config_entry: TruenasConfigEntry) -> None:
         """Class to manage fetching Truenas data API."""
+        super().__init__(
+            hass,
+            _LOGGER,
+            name=DOMAIN,
+            config_entry=config_entry,
+            update_interval=timedelta(seconds=SCAN_INTERVAL),
+        )
         self.unsub: CALLBACK_TYPE | None = None
         self._events = {}
         self.websocket: TruenasWebsocket
-        super().__init__(
-            hass, _LOGGER, name=DOMAIN, update_interval=timedelta(seconds=SCAN_INTERVAL)
-        )
 
     async def _async_setup(self) -> None:
         """Start Truenas connection."""
@@ -72,8 +81,9 @@ class TruenasDataUpdateCoordinator(DataUpdateCoordinator):
             raise UpdateFailed(f"WebSocket connection failed: {error}") from error
         else:
             await self.websocket.async_subscribe(
-                "reporting.realtime", self._callback_reporting
+                "reporting.realtime", self._callback_reports
             )
+
             await self.websocket.async_subscribe("alert.list", self._callback_events)
 
     @callback
@@ -94,7 +104,7 @@ class TruenasDataUpdateCoordinator(DataUpdateCoordinator):
 
     async def _async_call(
         self, method: str, params: list | None = None, critical: bool = True
-    ) -> dict[str, Any]:
+    ) -> Any:
         """Call a method on the websocket."""
         try:
             return await self.websocket.async_call(method=method, params=params)
@@ -125,7 +135,9 @@ class TruenasDataUpdateCoordinator(DataUpdateCoordinator):
 
         # Fetch network interfaces
         interfaces = await self._async_call("interface.query")
-        data["interfaces"] = list(filter(lambda x: "mac" not in x["name"], interfaces))
+        data["interfaces"] = list(
+            filter(lambda x: "mac" not in x.get("name", ""), interfaces)
+        )
 
         # Fetch network statistics
         net_stats = finditem(self._events, "reporting_realtime.interfaces", {})
@@ -233,7 +245,7 @@ class TruenasDataUpdateCoordinator(DataUpdateCoordinator):
 
         return data
 
-    async def _callback_reporting(self, data) -> None:
+    async def _callback_reports(self, data) -> None:
         """Calbback for websocket."""
         self._events.update({data["collection"].replace(".", "_"): data["fields"]})
 

@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
-import logging
 from typing import Final
 
 from homeassistant.components.sensor import (
@@ -38,12 +38,12 @@ from .const import (
 from .entity import TruenasEntity, TruenasEntityDescription
 from .helpers import finditem
 
-_LOGGER = logging.getLogger(__name__)
-
 
 @dataclass(frozen=True, kw_only=True)
 class TruenasSensorEntityDescription(SensorEntityDescription, TruenasEntityDescription):
     """Class describing entities."""
+
+    value_fn: Callable | None = None
 
 
 RESOURCE_LIST: Final[tuple[TruenasSensorEntityDescription, ...]] = (
@@ -209,18 +209,19 @@ RESOURCE_LIST: Final[tuple[TruenasSensorEntityDescription, ...]] = (
         attribute="used.parsed",
         extra_attributes=EXTRA_ATTRS_DATASET,
         id="id",
-        device_class="datasets",
+        device_class=SensorDeviceClass.DATA_SIZE,
         value_fn=lambda x: round(x / 1024 / 1024 / 1024, 2) if x is not None else 0,
     ),
     TruenasSensorEntityDescription(
         key="dataset_snapshot",
         name="Snapshots",
         icon="mdi:database",
+        native_unit_of_measurement=UnitOfInformation.GIBIBYTES,
         state_class=SensorStateClass.MEASUREMENT,
         device="Datasets",
         api="snapshots",
         attribute="count",
-        device_class="datasets",
+        device_class=SensorDeviceClass.DATA_SIZE,
         id="name",
     ),
     TruenasSensorEntityDescription(
@@ -265,7 +266,6 @@ RESOURCE_LIST: Final[tuple[TruenasSensorEntityDescription, ...]] = (
         attribute="state",
         extra_attributes=EXTRA_ATTRS_CLOUDSYNC,
         id="id",
-        device_class="cloudsync",
     ),
     TruenasSensorEntityDescription(
         key="replication",
@@ -305,23 +305,23 @@ async def async_setup_entry(
     """Set up the platform."""
     coordinator = entry.runtime_data
     entities = []
-    try:
-        for description in RESOURCE_LIST:
-            if description.id:
-                for value in finditem(coordinator.data, description.api, {}):
-                    entities.extend(
-                        [Sensor(coordinator, description, value[description.id])]
-                    )
-            else:
-                entities.append(Sensor(coordinator, description))
-    except (KeyError, TypeError):
-        _LOGGER.error(description.id)
+
+    for description in RESOURCE_LIST:
+        if description.id:
+            for value in finditem(coordinator.data, description.api, {}):
+                entities.extend(
+                    [Sensor(coordinator, description, value[description.id])]
+                )
+        else:
+            entities.append(Sensor(coordinator, description))
 
     async_add_entities(entities)
 
 
 class Sensor(TruenasEntity, SensorEntity):
     """Define an Truenas Sensor."""
+
+    entity_description: TruenasSensorEntityDescription
 
     @property
     def native_value(self) -> StateType | date | datetime | Decimal:
