@@ -130,7 +130,7 @@ class UpdateSensor(TruenasEntity, UpdateEntity):
                 if (ver := finditem(self.device_data, "0.new.version"))
                 else self.installed_version
             )
-        return finditem(self.device_data, "status.new_version", self.installed_version)
+        return finditem(self.device_data, "status.new_version.version", self.installed_version)
 
     async def async_install(self, version: str, backup: bool, **kwargs: Any) -> None:
         """Install an update."""
@@ -149,7 +149,7 @@ class UpdateSensor(TruenasEntity, UpdateEntity):
         if version.parse(self.installed_version) <= version.parse("25.10.0"):
             # Update installation progress for versions <= 25.10.0
             return finditem(self.device_data, "update_available.state") == "RUNNING"
-        return finditem(self.device_data, "update_download_progress") is not None
+        return int(finditem(self.device_data, "update_download_progress.percent")) != 100
 
 
 class UpdateAppSensor(TruenasEntity, UpdateEntity):
