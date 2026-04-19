@@ -130,13 +130,15 @@ class UpdateSensor(TruenasEntity, UpdateEntity):
                 if (ver := finditem(self.device_data, "0.new.version"))
                 else self.installed_version
             )
-        return finditem(self.device_data, "status.new_version.version", self.installed_version)
+        return finditem(
+            self.device_data, "status.new_version.version", self.installed_version
+        )
 
     async def async_install(self, version: str, backup: bool, **kwargs: Any) -> None:
         """Install an update."""
         try:
             await self.coordinator.websocket.async_call(
-                method="update.update", params=[{"resume": False, "reboot": True}]
+                method="update.run", params=[{"reboot": True}]
             )
         except TruenasException as error:
             _LOGGER.error(error)
@@ -149,7 +151,9 @@ class UpdateSensor(TruenasEntity, UpdateEntity):
         if version.parse(self.installed_version) <= version.parse("25.10.0"):
             # Update installation progress for versions <= 25.10.0
             return finditem(self.device_data, "update_available.state") == "RUNNING"
-        return int(finditem(self.device_data, "update_download_progress.percent")) != 100
+        return (
+            int(finditem(self.device_data, "update_download_progress.percent")) != 100
+        )
 
 
 class UpdateAppSensor(TruenasEntity, UpdateEntity):
