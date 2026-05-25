@@ -1,7 +1,5 @@
 """Update for TrueNAS integration."""
 
-from __future__ import annotations
-
 from collections.abc import Callable
 from dataclasses import dataclass
 import logging
@@ -20,6 +18,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import TruenasConfigEntry
+from .const import CONF_CHECK_DEV_VERSION
 from .coordinator import TruenasDataUpdateCoordinator
 from .entity import TruenasEntity, TruenasEntityDescription
 from .helpers import finditem
@@ -31,7 +30,7 @@ _LOGGER = logging.getLogger(__name__)
 class TruenasUpdateEntityDescription(UpdateEntityDescription, TruenasEntityDescription):
     """Class describing entities."""
 
-    cls: Callable[..., UpdateSensor | UpdateAppSensor] = lambda *args: UpdateSensor(
+    cls: Callable[..., UpdateSensor | UpdateAppSensor] = lambda *args: UpdateSensor(  # noqa: W0108, F821
         *args
     )
 
@@ -43,7 +42,7 @@ RESOURCE_LIST: Final[list[TruenasUpdateEntityDescription]] = [
         api="apps",
         attribute="upgrade_available",
         id="id",
-        cls=lambda *args: UpdateAppSensor(*args),
+        cls=lambda *args: UpdateAppSensor(*args),  # noqa: W0108
     ),
 ]
 
@@ -130,6 +129,14 @@ class UpdateSensor(TruenasEntity, UpdateEntity):
                 if (ver := finditem(self.device_data, "0.new.version"))
                 else self.installed_version
             )
+
+        if "beta" in finditem(
+            self.device_data, "status.new_version.version", self.installed_version
+        ).lower() and not self.coordinator.config_entry.options.get(
+            CONF_CHECK_DEV_VERSION
+        ):
+            return self.installed_version
+
         return finditem(
             self.device_data, "status.new_version.version", self.installed_version
         )

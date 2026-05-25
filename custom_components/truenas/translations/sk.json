@@ -19,5 +19,16 @@
       "500": "Interný error.",
       "no_response": "Hostiteľ nereaguje."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Možnosti",
+        "data": {
+          "notify": "Povolit oznámení",
+          "check_dev_version": "Zkontrolovat vývojové verze"
+        }
+      }
+    }
   }
 }

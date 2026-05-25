@@ -23,7 +23,8 @@
       "init": {
         "title": "Options",
         "data": {
-          "notify": "Activer les notifications"
+          "notify": "Activer les notifications",
+          "check_dev_version": "Vérifier les versions de développement"
         }
       }
     }

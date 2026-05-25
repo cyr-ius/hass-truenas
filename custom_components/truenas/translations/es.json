@@ -19,5 +19,16 @@
       "500": "Error Interno.",
       "no_response": "No hay respuesta del anfitrión."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Opciones",
+        "data": {
+          "notify": "Habilitar notificaciones",
+          "check_dev_version": "Verificar versiones de desarrollo"
+        }
+      }
+    }
   }
 }

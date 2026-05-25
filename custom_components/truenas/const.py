@@ -3,14 +3,15 @@
 from homeassistant.const import Platform
 
 CONF_NOTIFY = "notify"
+CONF_CHECK_DEV_VERSION = "check_dev_version"
 DEFAULT_PORT = 443
 DOMAIN = "truenas"
 PLATFORMS = [
-    Platform.SENSOR,
     Platform.BINARY_SENSOR,
-    Platform.UPDATE,
-    Platform.SWITCH,
     Platform.BUTTON,
+    Platform.SENSOR,
+    Platform.SWITCH,
+    Platform.UPDATE,
 ]
 
 UPDATE_IMG = "container_images_update_available"

@@ -17,5 +17,16 @@
       "unknown": "Erro interno.",
       "cannot_connect": "Sem resposta do host."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Opções",
+        "data": {
+          "notify": "Habilitar notificações",
+          "check_dev_version": "Verificar versões de desenvolvimento"
+        }
+      }
+    }
   }
 }

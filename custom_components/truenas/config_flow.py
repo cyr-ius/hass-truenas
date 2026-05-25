@@ -1,8 +1,5 @@
 """Config flow to configure Truenas."""
 
-from __future__ import annotations
-
-import logging
 from typing import Any
 
 from truenaspy import (
@@ -27,7 +24,7 @@ from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 
-from .const import CONF_NOTIFY, DEFAULT_PORT, DOMAIN
+from .const import CONF_CHECK_DEV_VERSION, CONF_NOTIFY, DEFAULT_PORT, DOMAIN
 
 DATA_SCHEMA = vol.Schema(
     {
@@ -42,7 +39,12 @@ DATA_SCHEMA = vol.Schema(
     }
 )
 
-_LOGGER = logging.getLogger(__name__)
+OPTIONS_SCHEMA = vol.Schema(
+    {
+        vol.Required(CONF_NOTIFY, default=False): bool,
+        vol.Optional(CONF_CHECK_DEV_VERSION, default=False): bool,
+    }
+)
 
 
 class TruenasFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
@@ -103,7 +105,7 @@ class TruenasFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         )
 
 
-class TruenasOptionsFlowHandler(config_entries.OptionsFlow):
+class TruenasOptionsFlowHandler(config_entries.OptionsFlowWithReload):
     """Handle option."""
 
     async def async_step_init(self, user_input=None):
@@ -114,9 +116,6 @@ class TruenasOptionsFlowHandler(config_entries.OptionsFlow):
         return self.async_show_form(
             step_id="init",
             data_schema=self.add_suggested_values_to_schema(
-                vol.Schema(
-                    {vol.Required(CONF_NOTIFY, default=False): bool},
-                ),
-                self.config_entry.options,
+                OPTIONS_SCHEMA, self.config_entry.options
             ),
         )
