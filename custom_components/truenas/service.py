@@ -1,7 +1,5 @@
 """Service for TrueNAS integration."""
 
-from __future__ import annotations
-
 from homeassistant.const import CONF_ENTITY_ID
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers import entity_registry as er

@@ -1,7 +1,5 @@
 """Binary Sensors for TrueNAS integration."""
 
-from __future__ import annotations
-
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Final
@@ -35,7 +33,7 @@ class TruenasBinarySensorEntityDescription(
     icon_disabled: str
     icon_enabled: str
     value_fn: Callable | None = None
-    cls: Callable[..., BinarySensor] = lambda *args: BinarySensor(*args)
+    cls: Callable[..., BinarySensor] = lambda *args: BinarySensor(*args)  # noqa: W0108, F821
 
 
 RESOURCE_LIST: Final[tuple[TruenasBinarySensorEntityDescription, ...]] = (
@@ -82,7 +80,7 @@ RESOURCE_LIST: Final[tuple[TruenasBinarySensorEntityDescription, ...]] = (
         device="System",
         api="events",
         attribute="alert_list",
-        cls=lambda *args: AlertBinarySensor(*args),
+        cls=lambda *args: AlertBinarySensor(*args),  # noqa: W0108
     ),
 )
 

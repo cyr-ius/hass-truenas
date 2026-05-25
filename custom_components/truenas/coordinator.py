@@ -1,10 +1,8 @@
 """Coordinator platform."""
 
-from __future__ import annotations
-
+import logging
 from collections import Counter
 from datetime import timedelta
-import logging
 from typing import TYPE_CHECKING, Any
 
 from aiohttp import WebSocketError
@@ -173,7 +171,6 @@ class TruenasDataUpdateCoordinator(DataUpdateCoordinator):
         data["disks"] = await self._async_call("disk.details")
 
         if version.parse(system_infos["version"]) <= version.parse("25.10.0"):
-            """Fetch additional data for versions < 25.10.0."""
 
             async def disktemps() -> list[dict[str, Any] | None]:
                 """Fetch disks data for versions < 25.10.0."""
@@ -215,7 +212,6 @@ class TruenasDataUpdateCoordinator(DataUpdateCoordinator):
             data["virtualmachines"] = await self._async_call("virt.instance.query")
 
         if version.parse(system_infos["version"]) >= version.parse("25.10.0"):
-            """Fetch additional data for versions >= 25.10.0."""
             data["update_available"] = await self._async_call(
                 "update.available_versions"
             )

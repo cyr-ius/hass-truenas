@@ -1,10 +1,8 @@
 """Switch for TrueNAS integration."""
 
-from __future__ import annotations
-
+import logging
 from collections.abc import Callable
 from dataclasses import dataclass
-import logging
 from typing import Any, Final
 
 from packaging import version

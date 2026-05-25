@@ -1,7 +1,5 @@
 """Truenas entity model."""
 
-from __future__ import annotations
-
 from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
@@ -15,6 +13,19 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import DOMAIN
 from .coordinator import TruenasDataUpdateCoordinator
 from .helpers import finditem
+
+
+@dataclass(frozen=True, kw_only=True)
+class TruenasEntityDescription:
+    """Base class for entity description."""
+
+    api: str
+    attribute: str
+    name: str
+    key: str
+    device: str
+    id: str | None = None
+    extra_attributes: list[str] | None = None
 
 
 class TruenasEntity(CoordinatorEntity[TruenasDataUpdateCoordinator], Entity):
@@ -100,16 +111,3 @@ class TruenasEntity(CoordinatorEntity[TruenasDataUpdateCoordinator], Entity):
                 default,
             )
         return data
-
-
-@dataclass(frozen=True, kw_only=True)
-class TruenasEntityDescription:
-    """Base class for entity description."""
-
-    api: str
-    attribute: str
-    name: str
-    key: str
-    device: str
-    id: str | None = None
-    extra_attributes: list[str] | None = None

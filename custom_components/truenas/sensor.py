@@ -1,7 +1,5 @@
 """Sensors for TrueNAS integration."""
 
-from __future__ import annotations
-
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
@@ -128,13 +126,15 @@ RESOURCE_LIST: Final[tuple[TruenasSensorEntityDescription, ...]] = (
         api="events",
         attribute="reporting_realtime.memory",
         value_fn=lambda x: (
-            100
-            - round(
-                x["physical_memory_available"] / x["physical_memory_total"] * 100, 2
+            (
+                100
+                - round(
+                    x["physical_memory_available"] / x["physical_memory_total"] * 100, 2
+                )
             )
-        )
-        if x is not None
-        else 0,
+            if x is not None
+            else 0
+        ),
     ),
     TruenasSensorEntityDescription(
         key="system_cache_size-arc_value",
