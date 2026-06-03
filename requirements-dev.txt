@@ -1,0 +1,3 @@
+truenaspy
+pytest-homeassistant-custom-component
+async-upnp-client
