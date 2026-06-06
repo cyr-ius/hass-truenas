@@ -1,12 +1,11 @@
 """Update for TrueNAS integration."""
 
+from __future__ import annotations
+
+import logging
 from collections.abc import Callable
 from dataclasses import dataclass
-import logging
 from typing import Any, Final
-
-from packaging import version
-from truenaspy import TruenasException
 
 from homeassistant.components.update import (
     UpdateDeviceClass,
@@ -16,6 +15,8 @@ from homeassistant.components.update import (
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from packaging import version
+from truenaspy import TruenasException
 
 from . import TruenasConfigEntry
 from .const import CONF_CHECK_DEV_VERSION
@@ -24,74 +25,6 @@ from .entity import TruenasEntity, TruenasEntityDescription
 from .helpers import finditem
 
 _LOGGER = logging.getLogger(__name__)
-
-
-@dataclass(frozen=True, kw_only=True)
-class TruenasUpdateEntityDescription(UpdateEntityDescription, TruenasEntityDescription):
-    """Class describing entities."""
-
-    cls: Callable[..., UpdateSensor | UpdateAppSensor] = lambda *args: UpdateSensor(  # noqa: W0108, F821
-        *args
-    )
-
-
-RESOURCE_LIST: Final[list[TruenasUpdateEntityDescription]] = [
-    TruenasUpdateEntityDescription(
-        key="app_update",
-        device="Apps",
-        api="apps",
-        attribute="upgrade_available",
-        id="id",
-        cls=lambda *args: UpdateAppSensor(*args),  # noqa: W0108
-    ),
-]
-
-RESOURCE_LIST_25_04: Final[list[TruenasUpdateEntityDescription]] = [
-    TruenasUpdateEntityDescription(
-        key="system_update",
-        device="System",
-        api="update_infos",
-        attribute="available",
-    )
-]
-
-RESOURCE_LIST_25_10: Final[list[TruenasUpdateEntityDescription]] = [
-    TruenasUpdateEntityDescription(
-        key="system_update",
-        device="System",
-        api="update_infos",
-        attribute="status.new_version",
-    )
-]
-
-
-async def async_setup_entry(
-    hass: HomeAssistant,
-    entry: TruenasConfigEntry,
-    async_add_entities: AddEntitiesCallback,
-) -> None:
-    """Set up the platform."""
-    coordinator = entry.runtime_data
-    entities = []
-    system_infos = coordinator.data.get("system_infos", {})
-
-    resources = (
-        RESOURCE_LIST + RESOURCE_LIST_25_10
-        if version.parse(system_infos["version"]) >= version.parse("25.10.0")
-        else RESOURCE_LIST + RESOURCE_LIST_25_04
-    )
-
-    for description in resources:
-        if description.id:
-            specs_entities = [
-                description.cls(coordinator, description, value[description.id])
-                for value in coordinator.data.get(description.api, {})
-            ]
-            entities.extend(specs_entities)
-        else:
-            entities.append(description.cls(coordinator, description))
-
-    async_add_entities(entities)
 
 
 class UpdateSensor(TruenasEntity, UpdateEntity):
@@ -141,7 +74,9 @@ class UpdateSensor(TruenasEntity, UpdateEntity):
             self.device_data, "status.new_version.version", self.installed_version
         )
 
-    async def async_install(self, version: str, backup: bool, **kwargs: Any) -> None:
+    async def async_install(
+        self, version: str | None, backup: bool, **kwargs: Any
+    ) -> None:
         """Install an update."""
         try:
             await self.coordinator.websocket.async_call(
@@ -153,14 +88,20 @@ class UpdateSensor(TruenasEntity, UpdateEntity):
             await self.coordinator.async_refresh()
 
     @property
-    def in_progress(self) -> int:
+    def in_progress(self) -> int | bool:
         """Update installation progress."""
         if version.parse(self.installed_version) <= version.parse("25.10.0"):
             # Update installation progress for versions <= 25.10.0
             return finditem(self.device_data, "update_available.state") == "RUNNING"
-        return (
-            int(finditem(self.device_data, "update_download_progress.percent")) != 100
-        )
+        event_data = finditem(self.coordinator.data, "events.update_status", {})
+        percent = finditem(event_data, "status.update_download_progress.percent")
+        if percent is None:
+            percent = finditem(
+                self.device_data, "status.update_download_progress.percent"
+            )
+        if percent is None or percent == 100:
+            return False
+        return int(percent)
 
 
 class UpdateAppSensor(TruenasEntity, UpdateEntity):
@@ -179,7 +120,6 @@ class UpdateAppSensor(TruenasEntity, UpdateEntity):
         """Set up device update entity."""
         super().__init__(coordinator, entity_description, uid)
         self._attr_title = uid.capitalize()
-        self._installing = False
 
     @property
     def installed_version(self) -> str | None:
@@ -198,18 +138,26 @@ class UpdateAppSensor(TruenasEntity, UpdateEntity):
     @property
     def release_summary(self) -> str | None:
         """Return the release notes."""
+        changelog = finditem(self.device_data, "version_details.changelog")
+        if changelog:
+            return changelog
         return finditem(self.device_data, "metadata.description")
+
+    _DEPLOYING_STATES = frozenset({"DEPLOYING", "PULLING", "STARTING"})
 
     @property
     def in_progress(self) -> bool:
         """Update installation progress."""
-        if self.latest_version == self.installed_version:
-            self._installing = False
-        return self._installing
+        app_id = self.device_data.get("id")
+        for app in self.coordinator.data.get("events", {}).get("app_query", []):
+            if app.get("id") == app_id:
+                return app.get("state") in self._DEPLOYING_STATES
+        return False
 
-    async def async_install(self, version: str, backup: bool, **kwargs: Any) -> None:
+    async def async_install(
+        self, version: str | None, backup: bool, **kwargs: Any
+    ) -> None:
         """Install an update."""
-        self._installing = True
         id_app = self.device_data.get("id")
         try:
             if self.device_data.get("upgrade_available"):
@@ -224,3 +172,69 @@ class UpdateAppSensor(TruenasEntity, UpdateEntity):
             _LOGGER.error(error)
         else:
             await self.coordinator.async_refresh()
+
+
+@dataclass(frozen=True, kw_only=True)
+class TruenasUpdateEntityDescription(UpdateEntityDescription, TruenasEntityDescription):
+    """Class describing entities."""
+
+    cls: Callable[..., UpdateSensor | UpdateAppSensor] = UpdateSensor
+
+
+RESOURCE_LIST: Final[list[TruenasUpdateEntityDescription]] = [
+    TruenasUpdateEntityDescription(
+        key="app_update",
+        device="Apps",
+        api="apps",
+        attribute="upgrade_available",
+        id="id",
+        cls=UpdateAppSensor,
+    ),
+]
+
+RESOURCE_LIST_25_04: Final[list[TruenasUpdateEntityDescription]] = [
+    TruenasUpdateEntityDescription(
+        key="system_update",
+        device="System",
+        api="update_infos",
+        attribute="available",
+    )
+]
+
+RESOURCE_LIST_25_10: Final[list[TruenasUpdateEntityDescription]] = [
+    TruenasUpdateEntityDescription(
+        key="system_update",
+        device="System",
+        api="update_infos",
+        attribute="status.new_version",
+    )
+]
+
+
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: TruenasConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
+    """Set up the platform."""
+    coordinator = entry.runtime_data
+    entities = []
+    system_infos = coordinator.data.get("system_infos", {})
+
+    resources = (
+        RESOURCE_LIST + RESOURCE_LIST_25_10
+        if version.parse(system_infos["version"]) >= version.parse("25.10.0")
+        else RESOURCE_LIST + RESOURCE_LIST_25_04
+    )
+
+    for description in resources:
+        if description.id:
+            specs_entities = [
+                description.cls(coordinator, description, value[description.id])
+                for value in coordinator.data.get(description.api, {})
+            ]
+            entities.extend(specs_entities)
+        else:
+            entities.append(description.cls(coordinator, description))
+
+    async_add_entities(entities)
