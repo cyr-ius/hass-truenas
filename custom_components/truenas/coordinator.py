@@ -6,9 +6,6 @@ from datetime import timedelta
 from typing import TYPE_CHECKING, Any
 
 from aiohttp import WebSocketError
-from packaging import version
-from truenaspy import TruenasException, TruenasWebsocket
-
 from homeassistant.const import (
     CONF_HOST,
     CONF_PASSWORD,
@@ -21,6 +18,8 @@ from homeassistant.const import (
 from homeassistant.core import CALLBACK_TYPE, Event, HomeAssistant, callback
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from packaging import version
+from truenaspy import TruenasException, TruenasWebsocket
 
 from .const import DOMAIN
 from .helpers import finditem
@@ -78,11 +77,7 @@ class TruenasDataUpdateCoordinator(DataUpdateCoordinator):
             self.logger.error("Error connecting to WebSocket: %s", error)
             raise UpdateFailed(f"WebSocket connection failed: {error}") from error
         else:
-            await self.websocket.async_subscribe(
-                "reporting.realtime", self._callback_reports
-            )
-
-            await self.websocket.async_subscribe("alert.list", self._callback_events)
+            await self._websockets_events_subscribers()
 
     @callback
     def _setup_websocket_monitoring(self) -> None:
@@ -163,7 +158,7 @@ class TruenasDataUpdateCoordinator(DataUpdateCoordinator):
         data["snapshots"] = [
             {"name": k, "count": v}
             for k, v in Counter(
-                s["pool"] for s in snapshots[0] if len(snapshots) > 0
+                s.get("pool") for s in snapshots[0] if len(snapshots) > 0
             ).items()
         ]
 
@@ -241,19 +236,54 @@ class TruenasDataUpdateCoordinator(DataUpdateCoordinator):
 
         return data
 
-    async def _callback_reports(self, data) -> None:
-        """Calbback for websocket."""
-        self._events.update({data["collection"].replace(".", "_"): data["fields"]})
+    async def _websockets_events_subscribers(self) -> None:
+        """Subscribe to WebSocket events."""
+        await self.websocket.async_subscribe(
+            "reporting.realtime", self._make_event_callback(scalar=True, notify=True)
+        )
+        await self.websocket.async_subscribe("alert.list", self._make_event_callback())
+        await self.websocket.async_subscribe(
+            "update.status", self._make_event_callback(scalar=True, notify=True)
+        )
+        await self.websocket.async_subscribe(
+            "app.query", self._make_event_callback(scalar=False, notify=True)
+        )
 
-    async def _callback_events(self, data) -> None:
-        """Calbback for websocket."""
-        name = data["collection"].replace(".", "_")
-        if name not in self._events:
-            self._events[name] = []
-        if data["msg"].upper() == "ADDED":
-            self._events[name].append(data["fields"])
-        if data["msg"].upper() == "REMOVED":
-            id_to_remove = data["id"]
-            self._events[name] = [
-                event for event in self._events[name] if event["id"] != id_to_remove
-            ]
+    def _make_event_callback(self, scalar: bool = False, notify: bool = False):
+        """Return a WebSocket event callback configured for the given storage mode."""
+
+        async def _callback(data: dict) -> None:
+            if not (name := data.get("collection")) or not (msg := data.get("msg")):
+                return
+            name = name.replace(".", "_")
+            msg = msg.upper()
+            fields = data.get("fields", {})
+
+            if scalar:
+                if msg in ("ADDED", "CHANGED"):
+                    self._events[name] = fields
+                elif msg == "REMOVED":
+                    self._events.pop(name, None)
+            else:
+                if name not in self._events:
+                    self._events[name] = []
+                if msg == "ADDED":
+                    self._events[name].append(fields)
+                elif msg == "REMOVED":
+                    id_ = data.get("id")
+                    self._events[name] = [
+                        e for e in self._events[name] if e.get("id") != id_
+                    ]
+                elif msg == "CHANGED":
+                    if (id_ := data.get("id")) is None:
+                        self._events[name] = fields
+                    else:
+                        for i, event in enumerate(self._events.get(name, [])):
+                            if event.get("id") == id_:
+                                self._events[name][i] = fields
+                                break
+
+            if notify and self.data is not None:
+                self.async_set_updated_data(self.data)
+
+        return _callback
