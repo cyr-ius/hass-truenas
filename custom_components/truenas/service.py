@@ -1,6 +1,6 @@
 """Service for TrueNAS integration."""
 
-from homeassistant.const import CONF_ENTITY_ID
+from homeassistant.const import CONF_ENTITY_ID, CONF_NAME
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers import entity_registry as er
 
@@ -25,28 +25,35 @@ async def async_setup_services(
 ):
     """Register services."""
 
+    def _extract_uid(entity_id: str, key: str) -> str:
+        """Extract the TrueNAS uid from an entity unique_id."""
+        entry = er.async_get(hass).async_get(entity_id)
+        device_name = coordinator.config_entry.data[CONF_NAME].capitalize()
+        prefix = f"{device_name}-{key}-"
+        return entry.unique_id[len(prefix):]
+
     async def take_snapshot(call: ServiceCall) -> None:
-        """Create dataset snapshot."""
-        entity_id = call.data.get(CONF_ENTITY_ID)
-        entity = er.async_get(hass).async_get(entity_id)
-        await coordinator.api.async_take_snapshot(
-            name=entity.extended_dict.get("original_name").lower()
+        """Take a snapshot of a dataset."""
+        dataset = _extract_uid(call.data.get(CONF_ENTITY_ID), "snapshottask")
+        await coordinator.websocket.async_call(
+            method="zfs.snapshot.create",
+            params=[{"dataset": dataset, "name": "manual"}],
         )
 
     async def start_cloudsync(call: ServiceCall) -> None:
-        """Create dataset snapshot."""
-        entity_id = call.data.get(CONF_ENTITY_ID)
-        entity = er.async_get(hass).async_get(entity_id)
-        await coordinator.api.async_sync_cloudsync(
-            id=entity.extended_dict.get("original_name").lower()
+        """Start cloudsync."""
+        task_id = int(_extract_uid(call.data.get(CONF_ENTITY_ID), "cloudsync"))
+        await coordinator.websocket.async_call(
+            method="cloudsync.sync",
+            params=[task_id],
         )
 
     async def service_reload(call: ServiceCall) -> None:
-        """Create dataset snapshot."""
-        entity_id = call.data.get(CONF_ENTITY_ID)
-        entity = er.async_get(hass).async_get(entity_id)
-        await coordinator.api.async_reload_service(
-            service=entity.extended_dict.get("original_name").lower()
+        """Reload a service."""
+        service_name = _extract_uid(call.data.get(CONF_ENTITY_ID), "service")
+        await coordinator.websocket.async_call(
+            method="service.reload",
+            params=[service_name],
         )
 
     hass.services.async_register(

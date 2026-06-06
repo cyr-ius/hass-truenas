@@ -6,8 +6,7 @@ from homeassistant.helpers.device_registry import DeviceEntry
 
 from .const import PLATFORMS
 from .coordinator import TruenasDataUpdateCoordinator
-
-# from .service import async_setup_services
+from .service import async_setup_services
 
 type TruenasConfigEntry = ConfigEntry[TruenasDataUpdateCoordinator]
 
@@ -19,7 +18,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: TruenasConfigEntry) -> b
     entry.runtime_data = coordinator
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-    # await async_setup_services(hass, coordinator)
+    await async_setup_services(hass, coordinator)
 
     return True
 
