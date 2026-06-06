@@ -1,3 +1,5 @@
 truenaspy
+pytest
 pytest-homeassistant-custom-component
 async-upnp-client
+ruff
