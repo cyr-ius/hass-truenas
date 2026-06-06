@@ -6,10 +6,9 @@
   "image": "mcr.microsoft.com/devcontainers/python:3-3.14-trixie",
   "features": {
     "ghcr.io/devcontainers-extra/features/prek:1": {},
-    "ghcr.io/devcontainers-extra/features/ruff:2": {},
     "ghcr.io/devcontainers-extra/features/uv:1": {}
   },
-  "postCreateCommand": "git config --global --add safe.directory ${containerWorkspaceFolder} && uv pip install requirements-dev.txt",
+  "postCreateCommand": "git config --global --add safe.directory ${containerWorkspaceFolder} && prek install --overwrite && uv venv --clear && uv pip install --no-cache-dir --link-mode=copy -r requirements-dev.txt",
   "customizations": {
     "vscode": {
       "extensions": [
@@ -53,8 +52,10 @@
         "files.trimTrailingWhitespace": true
       }
     }
-  }
-
+  },
+  "mounts": [
+    "source=${env:HOME}/.claude,target=/home/vscode/.claude,type=bind,consistency=cached"
+  ]
   // Features to add to the dev container. More info: https://containers.dev/features.
   // "features": {},
 
