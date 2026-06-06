@@ -4,7 +4,7 @@
     "buildtime": {
       "$date": 1778082299000
     },
-    "hostname": "nestor",
+    "hostname": "truenas-scale",
     "physmem": 16539082752,
     "model": "12th Gen Intel(R) Core(TM) i5-12400",
     "cores": 12,
@@ -60,15 +60,15 @@
           "2500baseT/Full"
         ],
         "media_options": null,
-        "link_address": "a8:a1:59:ac:5c:85",
-        "permanent_link_address": "a8:a1:59:ac:5c:85",
-        "hardware_link_address": "a8:a1:59:ac:5c:85",
+        "link_address": "01:02:03:04:05:06",
+        "permanent_link_address": "01:02:03:04:05:06",
+        "hardware_link_address": "01:02:03:04:05:06",
         "rx_queues": 1,
         "tx_queues": 1,
         "aliases": [
           {
             "type": "INET6",
-            "address": "fe80::aaa1:59ff:feac:5c85",
+            "address": "fe80::aa02:03ff:fe04:0506",
             "netmask": 64
           }
         ],
@@ -114,9 +114,9 @@
           "Asym_Pause"
         ],
         "media_options": null,
-        "link_address": "a8:a1:59:ac:5c:81",
-        "permanent_link_address": "a8:a1:59:ac:5c:81",
-        "hardware_link_address": "a8:a1:59:ac:5c:81",
+        "link_address": "01:02:03:04:05:07",
+        "permanent_link_address": "01:02:03:04:05:07",
+        "hardware_link_address": "01:02:03:04:05:07",
         "rx_queues": 1,
         "tx_queues": 1,
         "aliases": [],
@@ -152,31 +152,31 @@
         "active_media_subtype": "10000Mb/s Other",
         "supported_media": [],
         "media_options": null,
-        "link_address": "8a:ce:8d:ba:7d:42",
+        "link_address": "01:02:03:04:05:08",
         "permanent_link_address": null,
-        "hardware_link_address": "8a:ce:8d:ba:7d:42",
+        "hardware_link_address": "01:02:03:04:05:08",
         "rx_queues": 1,
         "tx_queues": 1,
         "aliases": [
           {
             "type": "INET",
-            "address": "192.168.1.3",
+            "address": "192.168.1.100",
             "netmask": 24,
             "broadcast": "192.168.1.255"
           },
           {
             "type": "INET6",
-            "address": "2a01:e0a:fd1:1e60:88ce:8dff:feba:7d42",
+            "address": "2001:db8:fd1:1234:1234:1234:1234:1234",
             "netmask": 64
           },
           {
             "type": "INET6",
-            "address": "2a01:e0a:811:1420::3",
+            "address": "2001:db8:811:1420::3",
             "netmask": 128
           },
           {
             "type": "INET6",
-            "address": "fe80::cbe:a5ff:fe7b:f5",
+            "address": "fe80::aa02:03ff:fe04:0506",
             "netmask": 64
           }
         ],
@@ -188,12 +188,12 @@
       "aliases": [
         {
           "type": "INET",
-          "address": "192.168.1.3",
+          "address": "192.168.1.100",
           "netmask": 24
         },
         {
           "type": "INET6",
-          "address": "2a01:e0a:811:1420::3",
+          "address": "2001:db8:811:1420::3",
           "netmask": 128
         }
       ],
@@ -239,12 +239,94 @@
   ],
   "snapshots": [
     {
-      "name": "volume1",
-      "count": 15
+      "dataset": "volume1/sub",
+      "snapshot_name": "@auto-0",
+      "pool": "volume1"
     },
     {
-      "name": "volume2",
-      "count": 719
+      "dataset": "volume1/sub",
+      "snapshot_name": "@auto-1",
+      "pool": "volume1"
+    },
+    {
+      "dataset": "volume1/sub",
+      "snapshot_name": "@auto-2",
+      "pool": "volume1"
+    },
+    {
+      "dataset": "volume1/sub",
+      "snapshot_name": "@auto-3",
+      "pool": "volume1"
+    },
+    {
+      "dataset": "volume1/sub",
+      "snapshot_name": "@auto-4",
+      "pool": "volume1"
+    },
+    {
+      "dataset": "volume1/sub",
+      "snapshot_name": "@auto-5",
+      "pool": "volume1"
+    },
+    {
+      "dataset": "volume1/sub",
+      "snapshot_name": "@auto-6",
+      "pool": "volume1"
+    },
+    {
+      "dataset": "volume1/sub",
+      "snapshot_name": "@auto-7",
+      "pool": "volume1"
+    },
+    {
+      "dataset": "volume1/sub",
+      "snapshot_name": "@auto-8",
+      "pool": "volume1"
+    },
+    {
+      "dataset": "volume1/sub",
+      "snapshot_name": "@auto-9",
+      "pool": "volume1"
+    },
+    {
+      "dataset": "volume1/sub",
+      "snapshot_name": "@auto-10",
+      "pool": "volume1"
+    },
+    {
+      "dataset": "volume1/sub",
+      "snapshot_name": "@auto-11",
+      "pool": "volume1"
+    },
+    {
+      "dataset": "volume1/sub",
+      "snapshot_name": "@auto-12",
+      "pool": "volume1"
+    },
+    {
+      "dataset": "volume1/sub",
+      "snapshot_name": "@auto-13",
+      "pool": "volume1"
+    },
+    {
+      "dataset": "volume1/sub",
+      "snapshot_name": "@auto-14",
+      "pool": "volume1"
+    },
+    {
+      "dataset": "volume2/sub",
+      "snapshot_name": "@auto-0",
+      "pool": "volume2"
+    },
+    {
+      "dataset": "volume2/sub",
+      "snapshot_name": "@auto-1",
+      "pool": "volume2"
+    },
+    {
+      "dataset": "volume2/sub",
+      "snapshot_name": "@auto-2",
+      "pool": "volume2"
     }
   ],
   "disks": {
@@ -259,20 +341,20 @@
         "size": 250059350016,
         "mediasize": 250059350016,
         "vendor": null,
-        "ident": "2212E61EF1DC",
-        "serial": "2212E61EF1DC",
+        "ident": "AABB0000001A",
+        "serial": "AABB0000001A",
         "model": "CT250P2SSD8",
         "descr": "CT250P2SSD8",
-        "lunid": "nvme.c0a9-323231324536314546314443-4354323530503253534438-00000001",
+        "lunid": "nvme.0000-000000000000000000000000-000000000000000000000000-00000001",
         "bus": "UNKNOWN",
         "type": "SSD",
         "blocks": 488397168,
-        "serial_lunid": "2212E61EF1DC_nvme.c0a9-323231324536314546314443-4354323530503253534438-00000001",
+        "serial_lunid": "AABB0000001A_nvme.0000-000000000000000000000000-000000000000000000000000-00000001",
         "rotationrate": null,
         "stripesize": null,
         "parts": [],
         "dif": false,
-        "identifier": "{serial_lunid}2212E61EF1DC_nvme.c0a9-323231324536314546314443-4354323530503253534438-00000001",
+        "identifier": "{serial_lunid}AABB0000001A_nvme.0000-000000000000000000000000-000000000000000000000000-00000001",
         "enclosure": {},
         "partitions": [],
         "devname": "nvme0n1",
@@ -290,20 +372,20 @@
         "size": 4000787030016,
         "mediasize": 4000787030016,
         "vendor": null,
-        "ident": "S6BCNX0W102298E",
-        "serial": "S6BCNX0W102298E",
+        "ident": "SSD000000001A",
+        "serial": "SSD000000001A",
         "model": "Samsung_SSD_870_EVO_4TB",
         "descr": "Samsung_SSD_870_EVO_4TB",
-        "lunid": "5002538f43119e2e",
+        "lunid": "5000000000000001",
         "bus": "ATA",
         "type": "SSD",
         "blocks": 7814037168,
-        "serial_lunid": "S6BCNX0W102298E_5002538f43119e2e",
+        "serial_lunid": "SSD000000001A_5000000000000001",
         "rotationrate": null,
         "stripesize": null,
         "parts": [],
         "dif": false,
-        "identifier": "{serial_lunid}S6BCNX0W102298E_5002538f43119e2e",
+        "identifier": "{serial_lunid}SSD000000001A_5000000000000001",
         "enclosure": {},
         "partitions": [],
         "devname": "sda",
@@ -321,20 +403,20 @@
         "size": 2000398934016,
         "mediasize": 2000398934016,
         "vendor": null,
-        "ident": "WD-WCAY00910230",
-        "serial": "WD-WCAY00910230",
+        "ident": "WD-000000000001",
+        "serial": "WD-000000000001",
         "model": "WDC_WD2003FYYS-05T9B0",
         "descr": "WDC_WD2003FYYS-05T9B0",
-        "lunid": "50014ee25d27b8dd",
+        "lunid": "5000000000000002",
         "bus": "ATA",
         "type": "HDD",
         "blocks": 3907029168,
-        "serial_lunid": "WD-WCAY00910230_50014ee25d27b8dd",
+        "serial_lunid": "WD-000000000001_5000000000000002",
         "rotationrate": 7200,
         "stripesize": null,
         "parts": [],
         "dif": false,
-        "identifier": "{serial_lunid}WD-WCAY00910230_50014ee25d27b8dd",
+        "identifier": "{serial_lunid}WD-000000000001_5000000000000002",
         "enclosure": {},
         "partitions": [],
         "devname": "sdd",
@@ -352,20 +434,20 @@
         "size": 4000787030016,
         "mediasize": 4000787030016,
         "vendor": null,
-        "ident": "S6BCNX0W103229E",
-        "serial": "S6BCNX0W103229E",
+        "ident": "SSD000000002A",
+        "serial": "SSD000000002A",
         "model": "Samsung_SSD_870_EVO_4TB",
         "descr": "Samsung_SSD_870_EVO_4TB",
-        "lunid": "5002538f431268df",
+        "lunid": "5000000000000003",
         "bus": "ATA",
         "type": "SSD",
         "blocks": 7814037168,
-        "serial_lunid": "S6BCNX0W103229E_5002538f431268df",
+        "serial_lunid": "SSD000000002A_5000000000000003",
         "rotationrate": null,
         "stripesize": null,
         "parts": [],
         "dif": false,
-        "identifier": "{serial_lunid}S6BCNX0W103229E_5002538f431268df",
+        "identifier": "{serial_lunid}SSD000000002A_5000000000000003",
         "enclosure": {},
         "partitions": [],
         "devname": "sdc",
@@ -383,20 +465,20 @@
         "size": 4000787030016,
         "mediasize": 4000787030016,
         "vendor": null,
-        "ident": "S6BCNX0TB01244T",
-        "serial": "S6BCNX0TB01244T",
+        "ident": "SSD000000003A",
+        "serial": "SSD000000003A",
         "model": "Samsung_SSD_870_EVO_4TB",
         "descr": "Samsung_SSD_870_EVO_4TB",
-        "lunid": "5002538f42b299c3",
+        "lunid": "5000000000000004",
         "bus": "ATA",
         "type": "SSD",
         "blocks": 7814037168,
-        "serial_lunid": "S6BCNX0TB01244T_5002538f42b299c3",
+        "serial_lunid": "SSD000000003A_5000000000000004",
         "rotationrate": null,
         "stripesize": null,
         "parts": [],
         "dif": false,
-        "identifier": "{serial_lunid}S6BCNX0TB01244T_5002538f42b299c3",
+        "identifier": "{serial_lunid}SSD000000003A_5000000000000004",
         "enclosure": {},
         "partitions": [],
         "devname": "sdb",
@@ -515,7 +597,7 @@
             "web_port": 5905,
             "bind": "0.0.0.0",
             "wait": false,
-            "password": "Cyr0ius",
+            "password": "changeme",
             "web": true,
             "type": "SPICE"
           },
@@ -611,7 +693,7 @@
             "web_port": 5907,
             "bind": "0.0.0.0",
             "wait": false,
-            "password": "Cyr0ius",
+            "password": "changeme",
             "web": true,
             "type": "SPICE"
           },
@@ -704,7 +786,7 @@
             "web_port": 5903,
             "bind": "0.0.0.0",
             "wait": false,
-            "password": "Cyr0ius",
+            "password": "changeme",
             "web": true,
             "type": "SPICE"
           },
@@ -13273,9 +13355,9 @@
             },
             "children": [
               {
-                "name": "ata-Samsung_SSD_870_EVO_4TB_S6BCNX0W102298E",
+                "name": "ata-Samsung_SSD_870_EVO_4TB_SSD000000001A",
                 "type": "DISK",
-                "path": "/dev/disk/by-id/ata-Samsung_SSD_870_EVO_4TB_S6BCNX0W102298E",
+                "path": "/dev/disk/by-id/ata-Samsung_SSD_870_EVO_4TB_SSD000000001A",
                 "guid": "3206469802254492746",
                 "status": "ONLINE",
                 "stats": {
