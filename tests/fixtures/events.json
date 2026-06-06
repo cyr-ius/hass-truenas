@@ -1,0 +1,513 @@
+{
+  "events": {
+    "alert.list": [
+      {
+        "collection": "alert.list",
+        "fields": {
+          "level": "INFO",
+          "klass": "testAlert",
+          "uuid": "1234"
+        },
+        "msg": "ADDED",
+        "id": 1
+      },
+      {
+        "collection": "alert.list",
+        "fields": {
+          "level": "WARN",
+          "klass": "testAlert",
+          "uuid": "5678"
+        },
+        "msg": "CHANGED",
+        "id": 1
+      },
+      {
+        "collection": "alert.list",
+        "fields": {
+          "level": "ERROR",
+          "klass": "testAlert",
+          "uuid": "9012"
+        },
+        "msg": "REMOVED",
+        "id": 1
+      }
+    ],
+    "update.status": [
+      {
+        "msg": "changed",
+        "collection": "update.status",
+        "fields": {
+          "status": {
+            "code": "NORMAL",
+            "error": null,
+            "status": {
+              "current_version": {
+                "train": "TrueNAS-SCALE-Goldeye",
+                "profile": "MISSION_CRITICAL",
+                "matches_profile": true
+              },
+              "new_version": {
+                "version": "25.10.4",
+                "manifest": {
+                  "filename": "TrueNAS-SCALE-25.10.4.update",
+                  "version": "25.10.4",
+                  "date": "2026-06-02T21:27:59.730916",
+                  "changelog": "",
+                  "checksum": "a89d4c6c8c40e1ba1456e505b5995484e68d6f4b9d82a23252d6e217631a9301",
+                  "filesize": 1923203072,
+                  "profile": "GENERAL",
+                  "train": "TrueNAS-SCALE-Goldeye"
+                },
+                "release_notes": "## TrueNAS 25.10.4\n\nThis maintenance release updates the Linux kernel and Samba to address multiple security vulnerabilities, and includes ZFS data integrity, NFS, iSCSI, networking, and Active Directory fixes.\n\n- **Security:** Updates the Linux kernel to v6.12.91 and Samba to 4.22.10, mitigating multiple CVEs. Kernel updates include the Dirty-Frag local privilege escalation, a ptrace privilege issue, and the related Fragnesia ESP-in-TCP privilege escalation. Samba updates address a missing access check that let read-only users alter reparse point attributes and a WORM module flaw that allowed protected files to be overwritten through rename.\n- **Critical Bug Fixes:** Fixes a potential ZFS double free when freeing blocks cloned after deduplication table pruning, virtual machines stored on NFSv4.1 datasets failing to power on under VMware ESXi, and a kernel crash in the iSCSI target during SCSI bus or LUN resets on Enterprise High Availability (HA) systems.\n- **HA and Networking Improvements:** Improves iSCSI LUN replacement during HA failover by holding cleanup until cluster coordination completes, and resolves a validation error that incorrectly blocked static network configuration on HA-capable systems when DHCP was not being enabled.\n- **Active Directory Improvements:** Hardens directory rejoin, reset, and recovery handling, improves domain controller selection on systems with multiple controllers, and produces clearer diagnostics when a join or authentication problem occurs.\n- **Additional Fixes:** Resolves ZFS automatic snapshots not being created after a Time Machine backup until the Mac reconnects on macOS Tahoe and later, and reduces excessive winbind log warnings for failed user and group lookups.\n\n**Pre-Update Actions:** null required when updating from 25.10.3.1.\n\n**[Version Recommendations](https://www.truenas.com/software-status/)** | **[Full Release Notes](https://www.truenas.com/docs/scale/25.10/gettingstarted/versionnotes/#25.10.4)** | **[Known Issues](https://www.truenas.com/docs/scale/25.10/gettingstarted/versionnotes/#known-issues)** | **[Enterprise Support](https://support.truenas.com/)** | **[Forums](https://forums.truenas.com/)**\n",
+                "release_notes_url": "https://www.truenas.com/docs/scale/25.10/gettingstarted/scalereleasenotes/#25104"
+              }
+            },
+            "update_download_progress": {
+              "description": "Verifying existing update",
+              "version": "25.10.4",
+              "percent": 0
+            }
+          }
+        }
+      }
+    ],
+    "reporting.realtime": [
+      {
+        "msg": "added",
+        "collection": "reporting.realtime",
+        "fields": {
+          "zfs": {
+            "demand_accesses_per_second": 30258,
+            "demand_data_accesses_per_second": 274,
+            "demand_metadata_accesses_per_second": 29982,
+            "demand_data_hits_per_second": 273,
+            "demand_data_io_hits_per_second": 0,
+            "demand_data_misses_per_second": 2,
+            "demand_data_hit_percentage": 0,
+            "demand_data_io_hit_percentage": 0,
+            "demand_data_miss_percentage": 0,
+            "demand_metadata_hits_per_second": 29975,
+            "demand_metadata_io_hits_per_second": 0,
+            "demand_metadata_misses_per_second": 2,
+            "demand_metadata_hit_percentage": 0,
+            "demand_metadata_io_hit_percentage": 0,
+            "demand_metadata_miss_percentage": 0,
+            "l2arc_hits_per_second": 0,
+            "l2arc_misses_per_second": 0,
+            "total_l2arc_accesses_per_second": 0,
+            "l2arc_access_hit_percentage": 0,
+            "l2arc_miss_percentage": 0,
+            "bytes_read_per_second_from_the_l2arc": 0,
+            "bytes_written_per_second_to_the_l2arc": 0
+          },
+          "memory": {
+            "arc_size": 8118229872,
+            "arc_free_memory": 1482240000,
+            "arc_available_memory": 841937664,
+            "physical_memory_total": 16539082752,
+            "physical_memory_available": 1891344384
+          },
+          "cpu": {
+            "cpu": {
+              "usage": 14.0,
+              "temp": 74.0
+            },
+            "cpu0": {
+              "usage": 5.0,
+              "temp": 47.0
+            },
+            "cpu1": {
+              "usage": 0.0,
+              "temp": 44.0
+            },
+            "cpu2": {
+              "usage": 12.0,
+              "temp": 56.0
+            },
+            "cpu3": {
+              "usage": 7.0,
+              "temp": 47.0
+            },
+            "cpu4": {
+              "usage": 7.0,
+              "temp": 51.0
+            },
+            "cpu5": {
+              "usage": 6.0,
+              "temp": 47.0
+            },
+            "cpu6": {
+              "usage": 18.0,
+              "temp": null
+            },
+            "cpu7": {
+              "usage": 2.0,
+              "temp": null
+            },
+            "cpu8": {
+              "usage": 10.0,
+              "temp": null
+            },
+            "cpu9": {
+              "usage": 60.0,
+              "temp": null
+            },
+            "cpu10": {
+              "usage": 20.0,
+              "temp": null
+            },
+            "cpu11": {
+              "usage": 7.0,
+              "temp": null
+            }
+          },
+          "disks": {
+            "read_ops": 107.62048949999999,
+            "read_bytes": 11800119,
+            "write_ops": 75,
+            "write_bytes": 1123468,
+            "busy": 68.05206869999999
+          },
+          "interfaces": {
+            "enp2s0": {
+              "link_state": "LINK_STATE_UP",
+              "speed": 100,
+              "received_bytes_rate": 31794,
+              "sent_bytes_rate": 165688
+            },
+            "enp0s31f6": {
+              "link_state": "LINK_STATE_DOWN",
+              "speed": 0,
+              "received_bytes": 0,
+              "sent_bytes": 0,
+              "received_bytes_rate": 0,
+              "sent_bytes_rate": 0
+            },
+            "br0": {
+              "link_state": "LINK_STATE_UP",
+              "speed": 0,
+              "received_bytes_rate": 10901,
+              "sent_bytes_rate": 158985
+            }
+          },
+          "pools": {
+            "boot-pool": {
+              "available": 175841951744.0,
+              "used": 48905867264.0,
+              "total": 224747819008.0
+            },
+            "volume1": {
+              "available": 133457690624.0,
+              "used": 1797666983936.0,
+              "total": 1931124674560.0
+            },
+            "volume2": {
+              "available": 5563709198304.0,
+              "used": 2285728094540.0,
+              "total": 7849437292844.0
+            }
+          }
+        }
+      }
+    ],
+    "app.query": [
+      {
+        "msg": "ADDED",
+        "collection": "app.query",
+        "id": "transmission",
+        "fields": {
+          "name": "transmission",
+          "id": "transmission",
+          "state": "DEPLOYING",
+          "upgrade_available": true,
+          "latest_version": "1.3.8",
+          "image_updates_available": false,
+          "version": "1.3.7"
+        }
+      },
+      {
+        "msg": "CHANGED",
+        "collection": "app.query",
+        "id": "transmission",
+        "fields": {
+          "name": "transmission",
+          "id": "transmission",
+          "state": "RUNNING",
+          "upgrade_available": false,
+          "latest_version": "1.3.8",
+          "image_updates_available": false,
+          "version": "1.3.8"
+        }
+      }
+    ],
+    "app.query.full_example": {
+      "msg": "ADDED",
+      "collection": "app.query",
+      "id": "transmission",
+      "fields": {
+        "name": "transmission",
+        "id": "transmission",
+        "active_workloads": {
+          "containers": 1,
+          "used_ports": [
+            {
+              "container_port": 10109,
+              "protocol": "tcp",
+              "host_ports": [
+                {
+                  "host_port": 10109,
+                  "host_ip": "0.0.0.0"
+                },
+                {
+                  "host_port": 10109,
+                  "host_ip": "::"
+                }
+              ]
+            },
+            {
+              "container_port": 50413,
+              "protocol": "tcp",
+              "host_ports": [
+                {
+                  "host_port": 50413,
+                  "host_ip": "0.0.0.0"
+                },
+                {
+                  "host_port": 50413,
+                  "host_ip": "::"
+                }
+              ]
+            },
+            {
+              "container_port": 50413,
+              "protocol": "udp",
+              "host_ports": [
+                {
+                  "host_port": 50413,
+                  "host_ip": "0.0.0.0"
+                },
+                {
+                  "host_port": 50413,
+                  "host_ip": "::"
+                }
+              ]
+            }
+          ],
+          "used_host_ips": ["::", "0.0.0.0"],
+          "container_details": [
+            {
+              "service_name": "transmission",
+              "image": "ghcr.io/linuxserver/transmission:4.1.2",
+              "port_config": [
+                {
+                  "container_port": 10109,
+                  "protocol": "tcp",
+                  "host_ports": [
+                    {
+                      "host_port": 10109,
+                      "host_ip": "0.0.0.0"
+                    },
+                    {
+                      "host_port": 10109,
+                      "host_ip": "::"
+                    }
+                  ]
+                },
+                {
+                  "container_port": 50413,
+                  "protocol": "tcp",
+                  "host_ports": [
+                    {
+                      "host_port": 50413,
+                      "host_ip": "0.0.0.0"
+                    },
+                    {
+                      "host_port": 50413,
+                      "host_ip": "::"
+                    }
+                  ]
+                },
+                {
+                  "container_port": 50413,
+                  "protocol": "udp",
+                  "host_ports": [
+                    {
+                      "host_port": 50413,
+                      "host_ip": "0.0.0.0"
+                    },
+                    {
+                      "host_port": 50413,
+                      "host_ip": "::"
+                    }
+                  ]
+                }
+              ],
+              "state": "running",
+              "volume_mounts": [
+                {
+                  "source": "/mnt/volume2/data/Transmission/completed",
+                  "destination": "/downloads/complete",
+                  "mode": "",
+                  "type": "bind"
+                },
+                {
+                  "source": "/mnt/volume2/data/Transmission/incomplete",
+                  "destination": "/downloads/incomplete",
+                  "mode": "",
+                  "type": "bind"
+                },
+                {
+                  "source": "/mnt/.ix-apps/app_mounts/transmission/config",
+                  "destination": "/config",
+                  "mode": "",
+                  "type": "bind"
+                }
+              ],
+              "id": "6f011ae33dfaa94935ad48c2600b8ad74fb1ed6319d7fd6a6c87743f5087baf5"
+            }
+          ],
+          "volumes": [
+            {
+              "source": "/mnt/volume2/data/Transmission/incomplete",
+              "destination": "/downloads/incomplete",
+              "mode": "",
+              "type": "bind"
+            },
+            {
+              "source": "/mnt/.ix-apps/app_mounts/transmission/config",
+              "destination": "/config",
+              "mode": "",
+              "type": "bind"
+            },
+            {
+              "source": "/mnt/volume2/data/Transmission/completed",
+              "destination": "/downloads/complete",
+              "mode": "",
+              "type": "bind"
+            }
+          ],
+          "images": ["ghcr.io/linuxserver/transmission:4.1.2"],
+          "networks": [
+            {
+              "Name": "ix-transmission_default",
+              "Id": "13a6b371dbf76fd8b7ca5e67e52054ffae21f0cf40a04ecada85adb1b003ef2f",
+              "Created": "2026-06-06T19:15:58.225639126+02:00",
+              "Scope": "local",
+              "Driver": "bridge",
+              "EnableIPv4": true,
+              "EnableIPv6": true,
+              "IPAM": {
+                "Driver": "default",
+                "Options": null,
+                "Config": [
+                  {
+                    "Subnet": "172.16.1.0/24",
+                    "Gateway": "172.16.1.1"
+                  },
+                  {
+                    "Subnet": "fdd0:0:0:1::/64",
+                    "Gateway": "fdd0:0:0:1::1"
+                  }
+                ]
+              },
+              "Internal": false,
+              "Attachable": false,
+              "Ingress": false,
+              "ConfigFrom": {
+                "Network": ""
+              },
+              "ConfigOnly": false,
+              "Containers": {},
+              "Options": {
+                "com.docker.network.enable_ipv6": "true"
+              },
+              "Labels": {
+                "com.docker.compose.config-hash": "c5331cecd1599a968094ad7c4611ed535bf03f8c2b43208e36f6a161c3aa829e",
+                "com.docker.compose.network": "default",
+                "com.docker.compose.project": "ix-transmission",
+                "com.docker.compose.version": "2.38.1"
+              }
+            }
+          ]
+        },
+        "state": "RUNNING",
+        "upgrade_available": false,
+        "latest_version": "1.3.8",
+        "image_updates_available": false,
+        "custom_app": false,
+        "human_version": "4.1.2_1.3.8",
+        "metadata": {
+          "annotations": {
+            "min_scale_version": "24.10.2.2"
+          },
+          "app_version": "4.1.2",
+          "capabilities": [
+            {
+              "description": "Transmission is able to change file ownership arbitrarily",
+              "name": "CHOWN"
+            },
+            {
+              "description": "Transmission is able to bypass file permission checks",
+              "name": "DAC_OVERRIDE"
+            },
+            {
+              "description": "Transmission is able to bypass permission checks for file operations",
+              "name": "FOWNER"
+            },
+            {
+              "description": "Transmission is able to change group ID of processes",
+              "name": "SETGID"
+            },
+            {
+              "description": "Transmission is able to change user ID of processes",
+              "name": "SETUID"
+            }
+          ],
+          "categories": ["media"],
+          "changelog_url": "https://github.com/transmission/transmission/releases/",
+          "date_added": "2024-09-19",
+          "description": "Transmission is designed for easy, powerful use.",
+          "home": "https://transmissionbt.com/",
+          "host_mounts": [],
+          "icon": "https://media.sys.truenas.net/apps/transmission/icons/icon.svg",
+          "keywords": ["media", "torrent", "download"],
+          "lib_version": "2.3.4",
+          "lib_version_hash": "2e3a8847308fb2eb0da046018f287c73822c094b5950a10377c3235794ff1242",
+          "maintainers": [
+            {
+              "email": "dev@truenas.com",
+              "name": "truenas",
+              "url": "https://www.truenas.com/"
+            }
+          ],
+          "name": "transmission",
+          "run_as_context": [
+            {
+              "description": "Container [transmission] runs as root user and group.",
+              "gid": 0,
+              "group_name": "Host group is [root]",
+              "uid": 0,
+              "user_name": "Host user is [root]"
+            }
+          ],
+          "screenshots": [],
+          "sources": [
+            "https://apps.truenas.com/catalog/transmission_community/",
+            "https://docs.linuxserver.io/images/docker-transmission/#parameters",
+            "https://github.com/linuxserver/docker-transmission",
+            "https://transmissionbt.com/"
+          ],
+          "title": "Transmission",
+          "train": "community",
+          "version": "1.3.8"
+        },
+        "migrated": false,
+        "notes": "# Transmission\n\n## Security\n\n**Read the following security precautions to ensure that you wish to continue using this application.**\n\n---\n\n### Container: [transmission]\n\n#### Running user/group(s)\n\n- User: root\n- Group: root\n- Supplementary Groups: apps\n\n---\n\nFor additional configuration you can either use the WebUI,\nor add them in the [additional_config] section.\n\nSee [available options](https://github.com/transmission/transmission/blob/main/docs/Editing-Configuration-Files.md#options).\nAnything set on the [additional_config] section will be added/updated to the `settings.json`\nand changing it's value from the WebUI will be reset on the next deployment.\n\n## Bug Reports and Feature Requests\n\nIf you find a bug in this app or have an idea for a new feature, please file an issue at\nhttps://github.com/truenas/apps\n",
+        "portals": {
+          "Web UI": "http://0.0.0.0:10109/transmission/web"
+        },
+        "version": "1.3.8"
+      }
+    }
+  }
+}
