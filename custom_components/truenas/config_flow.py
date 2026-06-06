@@ -67,6 +67,7 @@ class TruenasFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_user(self, user_input=None):
         """Handle a flow initialized by the user."""
         errors = {}
+        websocket = None
         if user_input:
             try:
                 name = user_input[CONF_NAME]
@@ -84,7 +85,7 @@ class TruenasFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 )
                 if websocket.is_connected is False:
                     errors["base"] = "cannot_connect"
-                if websocket.is_logged is False:
+                elif websocket.is_logged is False:
                     errors["base"] = "invalid_auth"
             except AuthenticationFailed:
                 errors["base"] = "invalid_auth"
@@ -92,13 +93,14 @@ class TruenasFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 errors["base"] = "cannot_connect"
             except TruenasException:
                 errors["base"] = "unknown"
-            else:
+            finally:
+                if websocket is not None and websocket.is_connected:
+                    await websocket.async_close()
+
+            if not errors:
                 return self.async_create_entry(
                     title=f"{DOMAIN} ({name})", data=user_input
                 )
-            finally:
-                if websocket.is_connected:
-                    await websocket.async_close()
 
         return self.async_show_form(
             step_id="user", data_schema=DATA_SCHEMA, errors=errors
