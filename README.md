@@ -5,6 +5,7 @@
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/cyr-ius/hass-truenas?style=plastic)
 ![Project Stage](https://img.shields.io/badge/project%20stage-development-yellow.svg?style=plastic)
 ![GitHub all releases](https://img.shields.io/github/downloads/cyr-ius/hass-truenas/total?style=plastic)
+![downloads](https://img.shields.io/badge/dynamic/json?color=41BDF5&logo=home-assistant&label=integration%20usage&suffix=%20installs&cacheSeconds=15600&url=https://analytics.home-assistant.io/custom_integrations.json&query=$.truenas.total)
 
 ![GitHub commits since latest release](https://img.shields.io/github/commits-since/cyr-ius/hass-truenas/latest?style=plastic)
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/m/cyr-ius/hass-truenas?style=plastic)
