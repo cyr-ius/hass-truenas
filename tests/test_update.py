@@ -349,3 +349,69 @@ async def test_app_install_no_update_does_nothing(
     )
     assert "app.upgrade" not in methods
     assert "app.pull_images" not in methods
+
+
+# ---------------------------------------------------------------------------
+# System update — legacy version path (<= 25.10.0) and beta handling
+# ---------------------------------------------------------------------------
+
+
+def _make_system_entity(
+    coordinator: TruenasDataUpdateCoordinator,
+    installed: str,
+    device_data: dict[str, Any],
+) -> UpdateSensor:
+    """Build a System UpdateSensor with a controlled installed version/device_data."""
+    entity = UpdateSensor(coordinator, RESOURCE_LIST_25_10[0])
+    coordinator.data["system_infos"]["version"] = installed
+    entity.device_data = device_data
+    return entity
+
+
+async def test_system_legacy_latest_version_available(
+    coordinator: TruenasDataUpdateCoordinator,
+) -> None:
+    """Legacy path (<= 25.10.0) reads the new version from '0.new.version'."""
+    entity = _make_system_entity(
+        coordinator, "25.10.0", {"0": {"new": {"version": "25.10.1"}}}
+    )
+    assert entity.latest_version == "25.10.1"
+
+
+async def test_system_legacy_latest_version_fallback(
+    coordinator: TruenasDataUpdateCoordinator,
+) -> None:
+    """Legacy path without a pending version falls back to the installed one."""
+    entity = _make_system_entity(coordinator, "25.10.0", {})
+    assert entity.latest_version == "25.10.0"
+
+
+async def test_system_latest_version_beta_excluded(
+    coordinator: TruenasDataUpdateCoordinator,
+) -> None:
+    """A beta version is ignored when check_dev_version is disabled."""
+    entity = _make_system_entity(
+        coordinator,
+        "26.0.0",
+        {"status": {"new_version": {"version": "26.1.0-BETA"}}},
+    )
+    assert entity.latest_version == "26.0.0"
+
+
+async def test_system_in_progress_legacy_running(
+    coordinator: TruenasDataUpdateCoordinator,
+) -> None:
+    """Legacy in_progress is True when the update state is RUNNING."""
+    entity = _make_system_entity(
+        coordinator, "25.10.0", {"update_available": {"state": "RUNNING"}}
+    )
+    assert entity.in_progress is True
+
+
+async def test_system_in_progress_false_without_percent(
+    coordinator: TruenasDataUpdateCoordinator,
+) -> None:
+    """in_progress is False when no download percent is reported anywhere."""
+    coordinator.data["events"]["update_status"] = {}
+    entity = _make_system_entity(coordinator, "26.0.0", {})
+    assert entity.in_progress is False
