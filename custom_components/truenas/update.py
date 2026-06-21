@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -13,7 +14,7 @@ from homeassistant.components.update import (
     UpdateEntityDescription,
     UpdateEntityFeature,
 )
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from packaging import version
 from truenaspy import TruenasException
@@ -111,6 +112,11 @@ class UpdateAppSensor(TruenasEntity, UpdateEntity):
         UpdateEntityFeature.INSTALL | UpdateEntityFeature.PROGRESS
     )
 
+    _JOB_DONE_STATES = frozenset({"SUCCESS", "FAILED", "ABORTED"})
+    _DEPLOY_DONE_STATES = frozenset({"RUNNING", "STOPPED", "CRASHED"})
+    _JOB_TIMEOUT = 3600
+    _DEPLOY_TIMEOUT = 600
+
     def __init__(
         self,
         coordinator: TruenasDataUpdateCoordinator,
@@ -120,6 +126,34 @@ class UpdateAppSensor(TruenasEntity, UpdateEntity):
         """Set up device update entity."""
         super().__init__(coordinator, entity_description, uid)
         self._attr_title = uid.capitalize()
+        self._install_progress: int | bool = False
+        self._deploy_done: asyncio.Event | None = None
+
+    @callback
+    def _handle_data_finder(self, default: Any | None = None) -> Any:
+        """Prefer the live ``app.query`` event stream over the polled list.
+
+        The coordinator subscribes to ``app.query`` and pushes every state
+        transition (STOPPING/STOPPED/DEPLOYING/RUNNING, version bumps,
+        ``upgrade_available`` flips) in real time. Reading from it lets the
+        entity reflect those changes instantly instead of waiting for the
+        next full poll.
+        """
+        live = finditem(self.coordinator.data, "events.app_query")
+        if isinstance(live, list):
+            data = next((d for d in live if d.get("id") == self.uid), None)
+            if data is not None:
+                return data
+        return super()._handle_data_finder(default)
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Handle updated data and detect the end of a redeploy."""
+        super()._handle_coordinator_update()
+        if self._deploy_done is not None:
+            state = (self.device_data or {}).get("state")
+            if state in self._DEPLOY_DONE_STATES:
+                self._deploy_done.set()
 
     @property
     def installed_version(self) -> str | None:
@@ -143,34 +177,63 @@ class UpdateAppSensor(TruenasEntity, UpdateEntity):
             return changelog
         return finditem(self.device_data, "metadata.description")
 
-    _DEPLOYING_STATES = frozenset({"DEPLOYING", "PULLING", "STARTING"})
-
     @property
-    def in_progress(self) -> bool:
+    def in_progress(self) -> int | bool:
         """Update installation progress."""
-        app_id = self.device_data.get("id")
-        for app in self.coordinator.data.get("events", {}).get("app_query", []):
-            if app.get("id") == app_id:
-                return app.get("state") in self._DEPLOYING_STATES
-        return False
+        return self._install_progress
 
     async def async_install(
         self, version: str | None, backup: bool, **kwargs: Any
     ) -> None:
         """Install an update."""
         id_app = self.device_data.get("id")
-        try:
-            if self.device_data.get("upgrade_available"):
-                await self.coordinator.websocket.async_call(
-                    method="app.upgrade", params=[id_app]
-                )
-            if self.device_data.get("image_updates_available"):
-                await self.coordinator.websocket.async_call(
-                    method="app.pull_images", params=[id_app, {"redeploy": True}]
-                )
-        except TruenasException as error:
-            _LOGGER.error(error)
+        if self.device_data.get("upgrade_available"):
+            method, params = "app.upgrade", [id_app]
+        elif self.device_data.get("image_updates_available"):
+            method, params = "app.pull_images", [id_app, {"redeploy": True}]
         else:
+            return
+
+        # The job's `progress.percent` is the only source for the install
+        # percentage (`app.query` does not carry it), so it is tracked through
+        # the underlying job via the `core.get_jobs` events.
+        self._install_progress = True
+        self.async_write_ha_state()
+
+        job_id: int | None = None
+        job_done = asyncio.Event()
+        websocket = self.coordinator.websocket
+
+        async def _on_job(event: dict[str, Any]) -> None:
+            fields = event.get("fields", {})
+            if job_id is None or fields.get("id") != job_id:
+                return
+            percent = finditem(fields, "progress.percent")
+            if isinstance(percent, (int, float)) and 0 < percent < 100:
+                self._install_progress = int(percent)
+                self.async_write_ha_state()
+            if fields.get("state") in self._JOB_DONE_STATES:
+                job_done.set()
+
+        await websocket.async_subscribe("core.get_jobs", _on_job)
+        try:
+            job_id = await websocket.async_call(method=method, params=params)
+            await asyncio.wait_for(job_done.wait(), timeout=self._JOB_TIMEOUT)
+            # The job is done but the app then redeploys (STOPPING -> STOPPED
+            # -> DEPLOYING -> RUNNING). Keep progress on until the live
+            # `app.query` state pushed by the coordinator settles back to a
+            # terminal value.
+            self._deploy_done = asyncio.Event()
+            if (self.device_data or {}).get("state") not in self._DEPLOY_DONE_STATES:
+                await asyncio.wait_for(
+                    self._deploy_done.wait(), timeout=self._DEPLOY_TIMEOUT
+                )
+        except (TruenasException, asyncio.TimeoutError) as error:
+            _LOGGER.error(error)
+        finally:
+            await websocket.async_unsubscribe("core.get_jobs")
+            self._install_progress = False
+            self._deploy_done = None
             await self.coordinator.async_refresh()
 
 
