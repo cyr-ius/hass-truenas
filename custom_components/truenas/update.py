@@ -1,7 +1,5 @@
 """Update for TrueNAS integration."""
 
-from __future__ import annotations
-
 import asyncio
 import logging
 from collections.abc import Callable
@@ -27,6 +25,16 @@ from .helpers import finditem
 
 _LOGGER = logging.getLogger(__name__)
 
+_JOB_DONE_STATES: Final = frozenset({"SUCCESS", "FAILED", "ABORTED"})
+_JOB_TIMEOUT: Final = 3600
+
+
+@dataclass(frozen=True, kw_only=True)
+class TruenasUpdateEntityDescription(UpdateEntityDescription, TruenasEntityDescription):
+    """Class describing entities."""
+
+    cls: Callable[..., "UpdateSensor | UpdateAppSensor"]
+
 
 class UpdateSensor(TruenasEntity, UpdateEntity):
     """Define an TrueNAS System Update Sensor."""
@@ -47,6 +55,7 @@ class UpdateSensor(TruenasEntity, UpdateEntity):
         """Set up device update entity."""
         super().__init__(coordinator, entity_description, uid)
         self._attr_title = self.entity_description.device
+        self._install_progress: int | bool = False
 
     @property
     def installed_version(self) -> str:
@@ -78,19 +87,45 @@ class UpdateSensor(TruenasEntity, UpdateEntity):
     async def async_install(
         self, version: str | None, backup: bool, **kwargs: Any
     ) -> None:
-        """Install an update."""
+        """Install an update and track the `update.run` job progress."""
+        self._install_progress = True
+        self.async_write_ha_state()
+
+        job_id: int | None = None
+        job_done = asyncio.Event()
+        websocket = self.coordinator.websocket
+
+        async def _on_job(event: dict[str, Any]) -> None:
+            fields = event.get("fields", {})
+            _LOGGER.debug("update.run job event (tracking id=%s): %s", job_id, fields)
+            if job_id is None or fields.get("id") != job_id:
+                return
+            percent = finditem(fields, "progress.percent")
+            if isinstance(percent, (int, float)) and 0 < percent < 100:
+                self._install_progress = int(percent)
+                self.async_write_ha_state()
+            if fields.get("state") in _JOB_DONE_STATES:
+                job_done.set()
+
+        await websocket.async_subscribe("core.get_jobs", _on_job)
         try:
-            await self.coordinator.websocket.async_call(
+            job_id = await websocket.async_call(
                 method="update.run", params=[{"reboot": True}]
             )
-        except TruenasException as error:
+            _LOGGER.debug("update.run started, tracking job id=%s", job_id)
+            await asyncio.wait_for(job_done.wait(), timeout=_JOB_TIMEOUT)
+        except (TruenasException, TimeoutError) as error:
             _LOGGER.error(error)
-        else:
+        finally:
+            await websocket.async_unsubscribe("core.get_jobs")
+            self._install_progress = False
             await self.coordinator.async_refresh()
 
     @property
     def in_progress(self) -> int | bool:
         """Update installation progress."""
+        if self._install_progress:
+            return self._install_progress
         if version.parse(self.installed_version) <= version.parse("25.10.0"):
             # Update installation progress for versions <= 25.10.0
             return finditem(self.device_data, "update_available.state") == "RUNNING"
@@ -112,9 +147,7 @@ class UpdateAppSensor(TruenasEntity, UpdateEntity):
         UpdateEntityFeature.INSTALL | UpdateEntityFeature.PROGRESS
     )
 
-    _JOB_DONE_STATES = frozenset({"SUCCESS", "FAILED", "ABORTED"})
     _DEPLOY_DONE_STATES = frozenset({"RUNNING", "STOPPED", "CRASHED"})
-    _JOB_TIMEOUT = 3600
     _DEPLOY_TIMEOUT = 600
 
     def __init__(
@@ -212,13 +245,13 @@ class UpdateAppSensor(TruenasEntity, UpdateEntity):
             if isinstance(percent, (int, float)) and 0 < percent < 100:
                 self._install_progress = int(percent)
                 self.async_write_ha_state()
-            if fields.get("state") in self._JOB_DONE_STATES:
+            if fields.get("state") in _JOB_DONE_STATES:
                 job_done.set()
 
         await websocket.async_subscribe("core.get_jobs", _on_job)
         try:
             job_id = await websocket.async_call(method=method, params=params)
-            await asyncio.wait_for(job_done.wait(), timeout=self._JOB_TIMEOUT)
+            await asyncio.wait_for(job_done.wait(), timeout=_JOB_TIMEOUT)
             # The job is done but the app then redeploys (STOPPING -> STOPPED
             # -> DEPLOYING -> RUNNING). Keep progress on until the live
             # `app.query` state pushed by the coordinator settles back to a
@@ -228,20 +261,13 @@ class UpdateAppSensor(TruenasEntity, UpdateEntity):
                 await asyncio.wait_for(
                     self._deploy_done.wait(), timeout=self._DEPLOY_TIMEOUT
                 )
-        except (TruenasException, asyncio.TimeoutError) as error:
+        except (TruenasException, TimeoutError) as error:
             _LOGGER.error(error)
         finally:
             await websocket.async_unsubscribe("core.get_jobs")
             self._install_progress = False
             self._deploy_done = None
             await self.coordinator.async_refresh()
-
-
-@dataclass(frozen=True, kw_only=True)
-class TruenasUpdateEntityDescription(UpdateEntityDescription, TruenasEntityDescription):
-    """Class describing entities."""
-
-    cls: Callable[..., UpdateSensor | UpdateAppSensor] = UpdateSensor
 
 
 RESOURCE_LIST: Final[list[TruenasUpdateEntityDescription]] = [
@@ -261,6 +287,7 @@ RESOURCE_LIST_25_04: Final[list[TruenasUpdateEntityDescription]] = [
         device="System",
         api="update_infos",
         attribute="available",
+        cls=UpdateSensor,
     )
 ]
 
@@ -270,6 +297,7 @@ RESOURCE_LIST_25_10: Final[list[TruenasUpdateEntityDescription]] = [
         device="System",
         api="update_infos",
         attribute="status.new_version",
+        cls=UpdateSensor,
     )
 ]
 
