@@ -4,8 +4,6 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Final
 
-from packaging import version
-
 from homeassistant.components import persistent_notification
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
@@ -14,6 +12,7 @@ from homeassistant.components.binary_sensor import (
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from packaging import version
 
 from . import TruenasConfigEntry
 from .const import (
