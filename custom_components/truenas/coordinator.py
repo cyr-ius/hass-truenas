@@ -1,11 +1,14 @@
 """Coordinator platform."""
 
-import logging
 from collections import Counter
 from datetime import timedelta
+import logging
 from typing import TYPE_CHECKING, Any
 
 from aiohttp import WebSocketError
+from packaging import version
+from truenaspy import TruenasException, TruenasWebsocket
+
 from homeassistant.const import (
     CONF_HOST,
     CONF_PASSWORD,
@@ -18,8 +21,6 @@ from homeassistant.const import (
 from homeassistant.core import CALLBACK_TYPE, Event, HomeAssistant, callback
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
-from packaging import version
-from truenaspy import TruenasException, TruenasWebsocket
 
 from .const import DOMAIN
 from .helpers import finditem

@@ -1,10 +1,10 @@
 """Binary Sensors for TrueNAS integration."""
 
-from __future__ import annotations
-
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Final
+
+from packaging import version
 
 from homeassistant.components import persistent_notification
 from homeassistant.components.binary_sensor import (
@@ -14,7 +14,6 @@ from homeassistant.components.binary_sensor import (
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from packaging import version
 
 from . import TruenasConfigEntry
 from .const import (
@@ -30,7 +29,7 @@ from .helpers import finditem
 class BinarySensor(TruenasEntity, BinarySensorEntity):
     """Define an Truenas Binary Sensor."""
 
-    entity_description: TruenasBinarySensorEntityDescription
+    entity_description: "TruenasBinarySensorEntityDescription"
 
     @property
     def is_on(self) -> bool:
