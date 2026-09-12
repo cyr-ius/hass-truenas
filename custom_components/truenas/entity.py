@@ -1,11 +1,13 @@
 """Truenas entity model."""
 
+import inspect
 from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
 from homeassistant.const import CONF_NAME
 from homeassistant.core import callback
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.entity import DeviceInfo, Entity
 from homeassistant.helpers.typing import UNDEFINED
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -13,6 +15,13 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import DOMAIN
 from .coordinator import TruenasDataUpdateCoordinator
 from .helpers import finditem
+
+# `via_device` was deprecated in favor of `via_device_id` (HA 2026.9), but
+# older HA versions do not accept `via_device_id` as a kwarg, so detect
+# support at runtime instead of hard-depending on a minimum HA version.
+_SUPPORTS_VIA_DEVICE_ID = "via_device_id" in inspect.signature(
+    dr.DeviceRegistry.async_get_or_create
+).parameters
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -58,12 +67,22 @@ class TruenasEntity(CoordinatorEntity[TruenasDataUpdateCoordinator], Entity):
         system_info = coordinator.data.get("system_infos", {})
         device_name = coordinator.config_entry.data[CONF_NAME].capitalize()
         identifier = f"{device_name} {entity_description.device}"
+        via_device_info: dict[str, Any]
+        if _SUPPORTS_VIA_DEVICE_ID:
+            system_device = dr.async_get(coordinator.hass).async_get_device(
+                identifiers={(DOMAIN, system_info["hostname"])}
+            )
+            via_device_info = {
+                "via_device_id": system_device.id if system_device else None
+            }
+        else:
+            via_device_info = {"via_device": (DOMAIN, system_info["hostname"])}
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, identifier)},
             manufacturer=system_info.get("system_manufacturer"),
             model=system_info.get("system_product"),
-            via_device=(DOMAIN, system_info["hostname"]),
             name=identifier,
+            **via_device_info,
         )
         if entity_description.device == "System":
             self._attr_device_info = DeviceInfo(
