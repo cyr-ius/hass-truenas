@@ -23,6 +23,13 @@ _SUPPORTS_VIA_DEVICE_ID = "via_device_id" in inspect.signature(
     dr.DeviceRegistry.async_get_or_create
 ).parameters
 
+# `async_get_device` is deprecated in favor of `async_get_device_by_identifier`
+# (HA 2026.9), but older HA versions do not have that method, so detect
+# support at runtime instead of hard-depending on a minimum HA version.
+_SUPPORTS_DEVICE_BY_IDENTIFIER = hasattr(
+    dr.DeviceRegistry, "async_get_device_by_identifier"
+)
+
 
 @dataclass(frozen=True, kw_only=True)
 class TruenasEntityDescription:
@@ -69,9 +76,16 @@ class TruenasEntity(CoordinatorEntity[TruenasDataUpdateCoordinator], Entity):
         identifier = f"{device_name} {entity_description.device}"
         via_device_info: dict[str, Any]
         if _SUPPORTS_VIA_DEVICE_ID:
-            system_device = dr.async_get(coordinator.hass).async_get_device(
-                identifiers={(DOMAIN, system_info["hostname"])}
-            )
+            device_registry = dr.async_get(coordinator.hass)
+            if _SUPPORTS_DEVICE_BY_IDENTIFIER:
+                system_device = device_registry.async_get_device_by_identifier(
+                    (DOMAIN, system_info["hostname"]),
+                    coordinator.config_entry.entry_id,
+                )
+            else:
+                system_device = device_registry.async_get_device(
+                    identifiers={(DOMAIN, system_info["hostname"])}
+                )
             via_device_info = {
                 "via_device_id": system_device.id if system_device else None
             }
