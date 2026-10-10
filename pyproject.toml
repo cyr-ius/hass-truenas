@@ -20,7 +20,9 @@ Repository = "https://github.com/cyr-ius/hass-truenas"
 "Bug Tracker" = "https://github.com/cyr-ius/hass-truenas/issues"
 
 [dependency-groups]
+lint = ["prek"]
 dev = [
+    {include-group = "lint"},
     "truenaspy",
     "pytest",
     "pytest-homeassistant-custom-component",
@@ -32,6 +34,7 @@ dev = [
 packages = []
 
 [tool.ruff]
+fix = true
 target-version = "py314"
 line-length = 88
 indent-width = 4
@@ -70,3 +73,8 @@ testpaths = ["tests/"]
 python_files = ["test_*.py"]
 asyncio_mode = "auto"
 log_cli = true
+
+[tool.codespell]
+ignore-words-list = "hass"
+skip = "./.*,*.csv,*.json,uv.lock"
+quiet-level = 2
