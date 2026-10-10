@@ -1,6 +1,6 @@
 """Tests for TrueNAS button entities."""
 
-from typing import Generator
+from collections.abc import Generator
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from homeassistant.components.button import DOMAIN as BUTTON_DOMAIN

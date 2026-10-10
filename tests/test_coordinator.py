@@ -12,7 +12,6 @@ from truenaspy import TruenasException
 
 from custom_components.truenas.coordinator import TruenasDataUpdateCoordinator
 
-
 # ---------------------------------------------------------------------------
 # _ensure_connection / connection errors
 # ---------------------------------------------------------------------------
@@ -95,11 +94,11 @@ async def test_async_update_data_wraps_truenas_exception(
     coordinator.websocket = MagicMock()
     coordinator.websocket.is_connected = True
 
-    with patch.object(
-        coordinator, "_fetch_data", side_effect=TruenasException("kaput")
+    with (
+        patch.object(coordinator, "_fetch_data", side_effect=TruenasException("kaput")),
+        pytest.raises(UpdateFailed),
     ):
-        with pytest.raises(UpdateFailed):
-            await coordinator._async_update_data()
+        await coordinator._async_update_data()
 
 
 # ---------------------------------------------------------------------------
@@ -190,7 +189,12 @@ async def test_event_callback_list_added_removed_changed(
 
     # CHANGED with id updates the matching entry.
     await cb(
-        {"collection": "my.list", "msg": "changed", "id": 1, "fields": {"id": 1, "v": "z"}}
+        {
+            "collection": "my.list",
+            "msg": "changed",
+            "id": 1,
+            "fields": {"id": 1, "v": "z"},
+        }
     )
     assert coordinator._events[name][0]["v"] == "z"
 

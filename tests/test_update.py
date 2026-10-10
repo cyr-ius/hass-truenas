@@ -1,7 +1,8 @@
 """Tests for TrueNAS update entities."""
 
 import asyncio
-from typing import Any, Generator
+from collections.abc import Generator
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from homeassistant.config_entries import ConfigEntry
@@ -178,7 +179,12 @@ async def test_app_latest_version_upgrade_available(
     """upgrade_available → latest_version returns latest_version."""
     entity = _make_app_entity(
         coordinator,
-        {"id": "foo", "version": "1.0", "upgrade_available": True, "latest_version": "2.0"},
+        {
+            "id": "foo",
+            "version": "1.0",
+            "upgrade_available": True,
+            "latest_version": "2.0",
+        },
     )
     assert entity.latest_version == "2.0"
 
@@ -274,7 +280,13 @@ async def _run_app_install(
                 # event (HA tasks start eagerly).
                 await asyncio.sleep(0)
                 await captured["core.get_jobs"](
-                    {"fields": {"id": 99, "state": "SUCCESS", "progress": {"percent": 50}}}
+                    {
+                        "fields": {
+                            "id": 99,
+                            "state": "SUCCESS",
+                            "progress": {"percent": 50},
+                        }
+                    }
                 )
 
             hass.async_create_task(_fire())
@@ -285,8 +297,9 @@ async def _run_app_install(
     coordinator.websocket.async_unsubscribe = AsyncMock(side_effect=fake_unsubscribe)
     coordinator.websocket.async_call = AsyncMock(side_effect=fake_call)
 
-    with patch.object(UpdateAppSensor, "async_write_ha_state"), patch.object(
-        coordinator, "async_refresh", new=AsyncMock()
+    with (
+        patch.object(UpdateAppSensor, "async_write_ha_state"),
+        patch.object(coordinator, "async_refresh", new=AsyncMock()),
     ):
         await entity.async_install(None, False)
 

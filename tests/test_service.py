@@ -1,6 +1,6 @@
 """Tests for TrueNAS services."""
 
-from typing import Generator
+from collections.abc import Generator
 from unittest.mock import AsyncMock, MagicMock
 
 from homeassistant.config_entries import ConfigEntry

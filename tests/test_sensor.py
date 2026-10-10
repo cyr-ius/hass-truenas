@@ -1,13 +1,12 @@
 """Tests for TrueNAS sensor entities."""
 
+from collections.abc import Generator
 from datetime import UTC, datetime
-from typing import Generator
 from unittest.mock import AsyncMock, MagicMock
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
-
 
 # ---------------------------------------------------------------------------
 # Sensors système

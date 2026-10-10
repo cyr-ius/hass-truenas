@@ -1,9 +1,9 @@
 """The tests for the component."""
 
 import json
+from collections.abc import Generator
 from copy import deepcopy
 from pathlib import Path
-from typing import Generator
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -87,7 +87,13 @@ def fixture_mock_truenas_ws():
             if method == "update.status":
                 return deepcopy(FIXTURE_DATA["update_infos"])
             if method == "disk.temperatures":
-                return {"sdb": 35.0, "sda": 36.0, "sdd": 41.0, "sdc": 36.0, "nvme0n1": 50.85}
+                return {
+                    "sdb": 35.0,
+                    "sda": 36.0,
+                    "sdd": 41.0,
+                    "sdc": 36.0,
+                    "nvme0n1": 50.85,
+                }
             if method == "virt.instance.query":
                 return deepcopy(FIXTURE_DATA["virtualmachines"])
             if method == "vm.query":
