@@ -33,7 +33,7 @@ _JOB_TIMEOUT: Final = 3600
 class TruenasUpdateEntityDescription(UpdateEntityDescription, TruenasEntityDescription):
     """Class describing entities."""
 
-    cls: Callable[..., "UpdateSensor | UpdateAppSensor"]
+    cls: Callable[..., UpdateSensor | UpdateAppSensor]
 
 
 class UpdateSensor(TruenasEntity, UpdateEntity):

@@ -28,7 +28,7 @@ from .helpers import finditem
 class BinarySensor(TruenasEntity, BinarySensorEntity):
     """Define an Truenas Binary Sensor."""
 
-    entity_description: "TruenasBinarySensorEntityDescription"
+    entity_description: TruenasBinarySensorEntityDescription
 
     @property
     def is_on(self) -> bool:

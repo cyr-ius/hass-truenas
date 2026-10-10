@@ -1,14 +1,13 @@
 """Button for TrueNAS integration."""
 
-from dataclasses import dataclass
 import logging
+from dataclasses import dataclass
 from typing import Final
-
-from truenaspy import TruenasException
 
 from homeassistant.components.button import ButtonEntity, ButtonEntityDescription
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from truenaspy import TruenasException
 
 from . import TruenasConfigEntry
 from .entity import TruenasEntity, TruenasEntityDescription

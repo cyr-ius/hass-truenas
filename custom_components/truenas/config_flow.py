@@ -2,14 +2,7 @@
 
 from typing import Any
 
-from truenaspy import (
-    AuthenticationFailed,
-    ConnectionError,
-    TruenasException,
-    TruenasWebsocket,
-)
 import voluptuous as vol
-
 from homeassistant import config_entries
 from homeassistant.const import (
     CONF_HOST,
@@ -23,6 +16,12 @@ from homeassistant.const import (
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
+from truenaspy import (
+    AuthenticationFailed,
+    ConnectionError,
+    TruenasException,
+    TruenasWebsocket,
+)
 
 from .const import CONF_CHECK_DEV_VERSION, CONF_NOTIFY, DEFAULT_PORT, DOMAIN
 

@@ -1,16 +1,15 @@
 """Switch for TrueNAS integration."""
 
+import logging
 from collections.abc import Callable
 from dataclasses import dataclass
-import logging
 from typing import Any, Final
-
-from packaging import version
-from truenaspy import TruenasException
 
 from homeassistant.components.switch import SwitchEntity, SwitchEntityDescription
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from packaging import version
+from truenaspy import TruenasException
 
 from . import TruenasConfigEntry
 from .const import EXTRA_ATTRS_SERVICE, EXTRA_ATTRS_VM

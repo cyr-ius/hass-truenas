@@ -19,9 +19,10 @@ from .helpers import finditem
 # `via_device` was deprecated in favor of `via_device_id` (HA 2026.9), but
 # older HA versions do not accept `via_device_id` as a kwarg, so detect
 # support at runtime instead of hard-depending on a minimum HA version.
-_SUPPORTS_VIA_DEVICE_ID = "via_device_id" in inspect.signature(
-    dr.DeviceRegistry.async_get_or_create
-).parameters
+_SUPPORTS_VIA_DEVICE_ID = (
+    "via_device_id"
+    in inspect.signature(dr.DeviceRegistry.async_get_or_create).parameters
+)
 
 # `async_get_device` is deprecated in favor of `async_get_device_by_identifier`
 # (HA 2026.9), but older HA versions do not have that method, so detect

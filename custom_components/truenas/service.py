@@ -30,7 +30,7 @@ async def async_setup_services(
         entry = er.async_get(hass).async_get(entity_id)
         device_name = coordinator.config_entry.data[CONF_NAME].capitalize()
         prefix = f"{device_name}-{key}-"
-        return entry.unique_id[len(prefix):]
+        return entry.unique_id[len(prefix) :]
 
     async def take_snapshot(call: ServiceCall) -> None:
         """Take a snapshot of a dataset."""
