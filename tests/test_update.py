@@ -91,38 +91,88 @@ async def test_system_update_unique_id(
 # ---------------------------------------------------------------------------
 
 
+def _mock_system_job(
+    hass: HomeAssistant,
+    coordinator: TruenasDataUpdateCoordinator,
+    *,
+    error: Exception | None = None,
+) -> list[str]:
+    """Mock the websocket so that `update.run` starts a job that succeeds.
+
+    Return the list (filled during the install) of the called methods.
+    """
+    captured: dict[str, Any] = {}
+    methods: list[str] = []
+
+    async def fake_subscribe(collection: str, cb: Any) -> None:
+        captured[collection] = cb
+
+    async def fake_call(method: str | None = None, params: Any = None) -> Any:
+        methods.append(method)
+        if error is not None:
+            raise error
+
+        async def _fire() -> None:
+            # Let async_call return and assign job_id before firing the event.
+            await asyncio.sleep(0)
+            # An event for another job must be ignored.
+            await captured["core.get_jobs"]({"fields": {"id": 1, "state": "SUCCESS"}})
+            await captured["core.get_jobs"](
+                {"fields": {"id": 42, "state": "SUCCESS", "progress": {"percent": 50}}}
+            )
+
+        hass.async_create_task(_fire())
+        return 42
+
+    coordinator.websocket.async_subscribe = AsyncMock(side_effect=fake_subscribe)
+    coordinator.websocket.async_unsubscribe = AsyncMock()
+    coordinator.websocket.async_call = AsyncMock(side_effect=fake_call)
+    return methods
+
+
 async def test_system_update_install_calls_websocket(
     hass: HomeAssistant,
     coordinator: TruenasDataUpdateCoordinator,
 ) -> None:
-    """The System install calls websocket with method='update.run'."""
+    """The System install calls 'update.run' and tracks the job until it ends."""
     entity = UpdateSensor(coordinator, RESOURCE_LIST_25_10[0])
-    coordinator.websocket.async_call.reset_mock()
+    entity.hass = hass
+    methods = _mock_system_job(hass, coordinator)
 
-    with patch.object(coordinator, "async_refresh", new=AsyncMock()):
+    with (
+        patch.object(UpdateSensor, "async_write_ha_state"),
+        patch.object(coordinator, "async_refresh", new=AsyncMock()) as refresh,
+    ):
         await entity.async_install(None, False)
 
-    methods = [
-        c.kwargs.get("method") for c in coordinator.websocket.async_call.call_args_list
-    ]
-    assert "update.run" in methods
+    assert methods == ["update.run"]
+    coordinator.websocket.async_call.assert_awaited_once_with(
+        method="update.run", params=[{"reboot": True}]
+    )
+    coordinator.websocket.async_unsubscribe.assert_awaited_once_with("core.get_jobs")
+    refresh.assert_awaited_once()
+    assert entity._install_progress is False
 
 
 async def test_system_update_install_truenas_exception_is_caught(
     hass: HomeAssistant,
     coordinator: TruenasDataUpdateCoordinator,
 ) -> None:
-    """A TruenasException during the System install is caught (no refresh)."""
+    """A TruenasException is caught; the job is cleaned up and data refreshed."""
     entity = UpdateSensor(coordinator, RESOURCE_LIST_25_10[0])
-    coordinator.websocket.async_call = AsyncMock(
-        side_effect=TruenasException("update failed")
-    )
+    entity.hass = hass
+    _mock_system_job(hass, coordinator, error=TruenasException("update failed"))
 
-    with patch.object(coordinator, "async_refresh", new=AsyncMock()) as refresh:
+    with (
+        patch.object(UpdateSensor, "async_write_ha_state"),
+        patch.object(coordinator, "async_refresh", new=AsyncMock()) as refresh,
+    ):
         # Must not raise an exception.
         await entity.async_install(None, False)
 
-    refresh.assert_not_called()
+    coordinator.websocket.async_unsubscribe.assert_awaited_once_with("core.get_jobs")
+    refresh.assert_awaited_once()
+    assert entity._install_progress is False
 
 
 # ---------------------------------------------------------------------------
