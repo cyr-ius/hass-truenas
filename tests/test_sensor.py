@@ -4,9 +4,12 @@ from collections.abc import Generator
 from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock
 
+import pytest
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
+
+from .conftest import FIXTURE_DATA
 
 # ---------------------------------------------------------------------------
 # Sensors système
@@ -399,3 +402,29 @@ async def test_dataset_snapshot_unique_id(
     entry = registry.async_get("sensor.truenas_test_datasets_volume1_snapshots")
     assert entry is not None
     assert entry.unique_id == "Truenas_test-dataset_snapshot-volume1"
+
+
+async def test_cloudsync_numeric_id(
+    hass: HomeAssistant,
+    config_entry: ConfigEntry,
+    truenas_ws: Generator[AsyncMock | MagicMock],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A cloud sync task with an integer id creates its sensor (issue #5)."""
+    monkeypatch.setitem(
+        FIXTURE_DATA,
+        "cloudsync",
+        [{"id": 3, "description": "Backup", "state": "SUCCESS", "enabled": True}],
+    )
+    await hass.config_entries.async_setup(config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    registry = er.async_get(hass)
+    entity_id = registry.async_get_entity_id(
+        "sensor", "truenas", "Truenas_test-cloudsync-3"
+    )
+    assert entity_id is not None
+    state = hass.states.get(entity_id)
+    assert state is not None
+    assert state.state == "SUCCESS"
+    assert hass.states.get("sensor.truenas_test_system_cpu_usage") is not None

@@ -56,7 +56,7 @@ class TruenasEntity(CoordinatorEntity[TruenasDataUpdateCoordinator], Entity):
         self,
         coordinator: TruenasDataUpdateCoordinator,
         entity_description: TruenasEntityDescription,
-        uid: str | None = None,
+        uid: str | int | None = None,
     ) -> None:
         """Initialize."""
         super().__init__(coordinator)
@@ -66,10 +66,12 @@ class TruenasEntity(CoordinatorEntity[TruenasDataUpdateCoordinator], Entity):
         if entity_description.name and entity_description.name != UNDEFINED:
             self._attr_name = entity_description.name.capitalize()
         if uid:
+            # TrueNAS ids can be integers (e.g. cloud sync tasks): only the
+            # name is a string, self.uid keeps the API type for data lookups.
             self._attr_name = (
                 f"{uid} {self.name}".capitalize()
                 if self.name not in {UNDEFINED, None}
-                else uid.capitalize()
+                else str(uid).capitalize()
             )
 
         # Device info
