@@ -23,7 +23,6 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import StateType
 
-from . import TruenasConfigEntry
 from .const import (
     EXTRA_ATTRS_CLOUDSYNC,
     EXTRA_ATTRS_DATASET,
@@ -33,6 +32,7 @@ from .const import (
     EXTRA_ATTRS_RSYNCTASK,
     EXTRA_ATTRS_SNAPSHOTTASK,
 )
+from .coordinator import TruenasConfigEntry
 from .entity import TruenasEntity, TruenasEntityDescription
 from .helpers import finditem
 

@@ -9,7 +9,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from truenaspy import TruenasException
 
-from . import TruenasConfigEntry
+from .coordinator import TruenasConfigEntry
 from .entity import TruenasEntity, TruenasEntityDescription
 
 

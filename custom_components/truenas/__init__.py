@@ -5,10 +5,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceEntry
 
 from .const import PLATFORMS
-from .coordinator import TruenasDataUpdateCoordinator
+from .coordinator import TruenasConfigEntry, TruenasDataUpdateCoordinator
 from .service import async_setup_services
-
-type TruenasConfigEntry = ConfigEntry[TruenasDataUpdateCoordinator]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: TruenasConfigEntry) -> bool:

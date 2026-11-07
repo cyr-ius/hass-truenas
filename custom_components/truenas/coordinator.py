@@ -3,9 +3,10 @@
 import logging
 from collections import Counter
 from datetime import timedelta
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from aiohttp import WebSocketError
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     CONF_HOST,
     CONF_PASSWORD,
@@ -24,12 +25,10 @@ from truenaspy import TruenasException, TruenasWebsocket
 from .const import DOMAIN
 from .helpers import finditem
 
-if TYPE_CHECKING:
-    from . import TruenasConfigEntry
-
-
 _LOGGER = logging.getLogger(__name__)
 SCAN_INTERVAL = 60
+
+type TruenasConfigEntry = ConfigEntry[TruenasDataUpdateCoordinator]
 
 
 class TruenasDataUpdateCoordinator(DataUpdateCoordinator):

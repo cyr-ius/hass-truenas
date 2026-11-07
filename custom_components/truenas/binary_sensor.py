@@ -14,13 +14,13 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from packaging import version
 
-from . import TruenasConfigEntry
 from .const import (
     CONF_NOTIFY,
     EXTRA_ATTRS_NETWORK,
     EXTRA_ATTRS_POOL,
     EXTRA_ATTRS_SMARTDISK,
 )
+from .coordinator import TruenasConfigEntry
 from .entity import TruenasEntity, TruenasEntityDescription
 from .helpers import finditem
 

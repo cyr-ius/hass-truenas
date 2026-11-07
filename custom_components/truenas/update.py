@@ -17,9 +17,8 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from packaging import version
 from truenaspy import TruenasException
 
-from . import TruenasConfigEntry
 from .const import CONF_CHECK_DEV_VERSION
-from .coordinator import TruenasDataUpdateCoordinator
+from .coordinator import TruenasConfigEntry, TruenasDataUpdateCoordinator
 from .entity import TruenasEntity, TruenasEntityDescription
 from .helpers import finditem
 
