@@ -7,7 +7,6 @@ from decimal import Decimal
 from typing import Final
 
 from homeassistant.components.sensor import (
-    EntityCategory,
     SensorDeviceClass,
     SensorEntity,
     SensorEntityDescription,
@@ -15,6 +14,7 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.const import (
     PERCENTAGE,
+    EntityCategory,
     UnitOfDataRate,
     UnitOfInformation,
     UnitOfTemperature,
