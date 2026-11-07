@@ -18,6 +18,7 @@ from homeassistant.const import (
     UnitOfDataRate,
     UnitOfInformation,
     UnitOfTemperature,
+    EntityCategory,
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
